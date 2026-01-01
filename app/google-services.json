@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "155893550562",
+    "project_id": "survlatics",
+    "storage_bucket": "survlatics.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:155893550562:android:9d3dace4c725a4f81d7dbb",
+        "android_client_info": {
+          "package_name": "com.example.survlatics"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAxr59R6ahoGpa4i4UV9jU01G6N_Q8MgNI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
