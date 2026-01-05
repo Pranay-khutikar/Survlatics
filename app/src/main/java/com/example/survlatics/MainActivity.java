@@ -5,71 +5,150 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 public class MainActivity extends AppCompatActivity {
 
     private FirebaseAuth firebaseAuth;
+    private FirebaseFirestore firestore;
+
+    private TextInputEditText etEmail, etPassword;
+    private Button btnLogin;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.login);
 
-        // Initialize Firebase Auth
         firebaseAuth = FirebaseAuth.getInstance();
+        firestore = FirebaseFirestore.getInstance();
 
-        TextInputEditText etEmail = findViewById(R.id.etEmail);
-        TextInputEditText etPassword = findViewById(R.id.etPassword);
-        Button btnLogin = findViewById(R.id.button3);
+        etEmail = findViewById(R.id.etEmail);
+        etPassword = findViewById(R.id.etPassword);
+        btnLogin = findViewById(R.id.button3);
 
-        btnLogin.setOnClickListener(v -> {
+        // 🔁 Auto-login if already authenticated
+        FirebaseUser currentUser = firebaseAuth.getCurrentUser();
+        if (currentUser != null) {
+            redirectByRole(currentUser.getUid());
+            return;
+        }
 
-            String email = etEmail.getText() != null
-                    ? etEmail.getText().toString().trim()
-                    : "";
+        btnLogin.setOnClickListener(v -> attemptLogin());
+    }
 
-            String password = etPassword.getText() != null
-                    ? etPassword.getText().toString().trim()
-                    : "";
+    private void attemptLogin() {
 
-            // Validation
-            if (email.isEmpty()) {
-                Toast.makeText(MainActivity.this, "Email is required", Toast.LENGTH_SHORT).show();
-                return;
-            }
+        String email = etEmail.getText() != null
+                ? etEmail.getText().toString().trim()
+                : "";
 
-            if (password.isEmpty()) {
-                Toast.makeText(MainActivity.this, "Password is required", Toast.LENGTH_SHORT).show();
-                return;
-            }
+        String password = etPassword.getText() != null
+                ? etPassword.getText().toString().trim()
+                : "";
 
-            // 🔐 Firebase Authentication (REAL LOGIN CHECK)
-            firebaseAuth.signInWithEmailAndPassword(email, password)
-                    .addOnCompleteListener(task -> {
+        if (email.isEmpty()) {
+            etEmail.setError("Email required");
+            etEmail.requestFocus();
+            return;
+        }
 
-                        if (task.isSuccessful()) {
+        if (password.isEmpty()) {
+            etPassword.setError("Password required");
+            etPassword.requestFocus();
+            return;
+        }
 
-                            // Login success
-                            Toast.makeText(MainActivity.this, "Login Successful", Toast.LENGTH_SHORT).show();
+        btnLogin.setEnabled(false);
 
-                            Intent intent = new Intent(MainActivity.this, HomeActivity.class);
-                            startActivity(intent);
-                            finish(); // prevent back to login
+        firebaseAuth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(task -> {
 
-                        } else {
+                    btnLogin.setEnabled(true);
 
-                            // Login failed
-                            Toast.makeText(
-                                    MainActivity.this,
-                                    "Invalid email or password",
-                                    Toast.LENGTH_SHORT
-                            ).show();
-                        }
-                    });
-        });
+                    if (!task.isSuccessful()) {
+                        Toast.makeText(
+                                this,
+                                "Invalid email or password",
+                                Toast.LENGTH_SHORT
+                        ).show();
+                        return;
+                    }
+
+                    FirebaseUser user = firebaseAuth.getCurrentUser();
+                    if (user == null) {
+                        Toast.makeText(this, "Authentication failed", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    redirectByRole(user.getUid());
+                });
+    }
+
+    private void redirectByRole(@NonNull String uid) {
+
+        firestore.collection("Users") // keep EXACT case as your Firestore
+                .document(uid)
+                .get()
+                .addOnSuccessListener(document -> {
+
+                    if (!document.exists()) {
+                        Toast.makeText(
+                                this,
+                                "User record not found",
+                                Toast.LENGTH_LONG
+                        ).show();
+                        firebaseAuth.signOut();
+                        return;
+                    }
+
+                    String role = document.getString("role");
+
+                    if (role == null) {
+                        Toast.makeText(
+                                this,
+                                "User role missing",
+                                Toast.LENGTH_SHORT
+                        ).show();
+                        firebaseAuth.signOut();
+                        return;
+                    }
+
+                    role = role.trim().toLowerCase();
+
+                    Intent intent;
+
+                    if (role.equals("admin")) {
+                        intent = new Intent(this, AdminActivity.class);
+                    } else if (role.equals("user")) {
+                        intent = new Intent(this, HomeActivity.class);
+                    } else {
+                        Toast.makeText(
+                                this,
+                                "Invalid role configuration",
+                                Toast.LENGTH_SHORT
+                        ).show();
+                        firebaseAuth.signOut();
+                        return;
+                    }
+
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    finish();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(
+                            this,
+                            "Failed to load user data",
+                            Toast.LENGTH_SHORT
+                    ).show();
+                    firebaseAuth.signOut();
+                });
     }
 }

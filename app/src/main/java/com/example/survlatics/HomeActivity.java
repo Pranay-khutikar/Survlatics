@@ -13,27 +13,20 @@ public class HomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.home);
 
-        // Bottom bar buttons
         ImageButton btnHome = findViewById(R.id.imageButton);
         ImageButton btnMiddle = findViewById(R.id.imageButton2);
         ImageButton btnAccount = findViewById(R.id.imageButton3);
 
-        // Home button (optional - already on home)
         btnHome.setOnClickListener(v -> {
-            // Do nothing or refresh home
+            // already here
         });
 
-        // Middle button (optional)
         btnMiddle.setOnClickListener(v -> {
-            // You can open Surveys screen later
-            Intent intent = new Intent(HomeActivity.this, CompleteActivity.class);
-            startActivity(intent);
+            startActivity(new Intent(this, CompleteActivity.class));
         });
 
-        // ✅ Account button → Account screen
         btnAccount.setOnClickListener(v -> {
-            Intent intent = new Intent(HomeActivity.this, AccountActivity.class);
-            startActivity(intent);
+            startActivity(new Intent(this, AccountActivity.class));
         });
     }
 }

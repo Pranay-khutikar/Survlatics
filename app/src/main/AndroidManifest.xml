@@ -35,6 +35,13 @@
         <activity
             android:name=".AccountActivity"
             android:exported="false" />
+        <activity
+            android:name=".AdminActivity"
+            android:exported="false" />
+        <activity
+            android:name=".Accountadmin"
+            android:exported="false" />
+        <activity android:name=".AddSurveyActivity" />
 
         <!-- Preloaded Fonts -->
         <meta-data
