@@ -50,6 +50,7 @@ dependencies {
     // 📦 Firebase Realtime Database (optional, safe to keep)
     implementation("com.google.firebase:firebase-database")
     implementation("com.google.firebase:firebase-firestore")
+    implementation(libs.recyclerview)
 
 
     // Testing
