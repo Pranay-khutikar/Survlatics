@@ -117,4 +117,5 @@
         app:layout_constraintEnd_toEndOf="@+id/bottomAppBar"
         app:layout_constraintTop_toTopOf="@+id/bottomAppBar"
         app:srcCompat="@drawable/vector__2_" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
