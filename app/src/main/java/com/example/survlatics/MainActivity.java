@@ -34,12 +34,7 @@ public class MainActivity extends AppCompatActivity {
         btnLogin = findViewById(R.id.button3);
 
         // 🔁 Auto-login if already authenticated
-        FirebaseUser currentUser = firebaseAuth.getCurrentUser();
-        if (currentUser != null) {
-            redirectByRole(currentUser.getUid());
-            return;
-        }
-
+       //
         btnLogin.setOnClickListener(v -> attemptLogin());
     }
 

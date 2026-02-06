@@ -7,7 +7,6 @@
 
     <com.google.android.material.bottomappbar.BottomAppBar
         android:id="@+id/bottomAppBar"
-        android:id="@+id/bottomAppBar"
         android:layout_width="425dp"
         android:layout_height="104dp"
         android:layout_gravity="bottom"
