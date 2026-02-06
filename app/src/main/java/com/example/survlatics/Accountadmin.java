@@ -26,6 +26,7 @@ public class Accountadmin extends AppCompatActivity {
     private EditText etEmail, etPassword;
     private AutoCompleteTextView spinnerRole;
     private Button btnAddUser;
+    private Button btnLogout;
 
     // ⭐ NEW
     private RecyclerView recyclerUsers;
@@ -57,7 +58,7 @@ public class Accountadmin extends AppCompatActivity {
         etPassword = findViewById(R.id.etPassword);
         spinnerRole = findViewById(R.id.spinnerRole);
         btnAddUser = findViewById(R.id.btnAddUser);
-
+        btnLogout = findViewById(R.id.btnLogout);
         recyclerUsers = findViewById(R.id.recyclerUsers);
 
         // RecyclerView setup
@@ -88,7 +89,10 @@ public class Accountadmin extends AppCompatActivity {
             startActivity(new Intent(this, CompleteActivity.class));
             finish();
         });
-
+        btnLogout.setOnClickListener(v -> {
+            startActivity(new Intent(this, MainActivity.class));
+            finish();
+        });
         // ---------------- Admin Access Check ----------------
         FirebaseUser currentUser = adminAuth.getCurrentUser();
 
