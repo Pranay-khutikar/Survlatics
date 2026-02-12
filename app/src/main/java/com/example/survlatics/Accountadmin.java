@@ -77,8 +77,8 @@ public class Accountadmin extends AppCompatActivity {
         spinnerRole.setText("user", false);
 
         // ---------------- Bottom Navigation ----------------
-        ImageButton btnHome = findViewById(R.id.imageButton);
-        ImageButton btnMiddle = findViewById(R.id.imageButton2);
+        ImageButton btnHome = findViewById(R.id.nav_home);
+        ImageButton btnMiddle = findViewById(R.id.nav_surveys);
 
         btnHome.setOnClickListener(v -> {
             startActivity(new Intent(this, AdminActivity.class));

@@ -2,9 +2,11 @@ package com.example.survlatics;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.widget.Button;
 import android.widget.ImageButton;
-
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class AccountActivity extends AppCompatActivity {
 
@@ -14,26 +16,25 @@ public class AccountActivity extends AppCompatActivity {
         setContentView(R.layout.account);
 
         // Bottom bar buttons
-        ImageButton btnHome = findViewById(R.id.imageButton);
-        ImageButton btnMiddle = findViewById(R.id.imageButton2);
-        ImageButton btnAccount = findViewById(R.id.imageButton3);
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigationView);
+        Button btnLogout = findViewById(R.id.btnLogout2);
 
         // Home button (optional - already on home)
-        btnHome.setOnClickListener(v -> {
-            Intent intent = new Intent(AccountActivity.this, HomeActivity.class);
-            startActivity(intent);
-        });
+        bottomNavigationView.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
 
-        // Middle button (optional)
-        btnMiddle.setOnClickListener(v -> {
-            // You can open Surveys screen later
-            Intent intent = new Intent(AccountActivity.this, CompleteActivity.class);
-            startActivity(intent);
-        });
-
-        // ✅ Account button → Account screen
-        btnAccount.setOnClickListener(v -> {
-
+            if (id == R.id.nav_home) {
+                // Handle Home click
+                return true;
+            } else if (id == R.id.nav_surveys) {
+                // Handle Survey click
+                return true;
+            } else if (id == R.id.nav_account) {
+                // This is where your 'nav_account' logic goes!
+                startActivity(new Intent(this, AccountActivity.class));
+                return true;
+            }
+            return false;
         });
     }
 }

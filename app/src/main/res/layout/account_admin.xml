@@ -38,7 +38,7 @@
         android:layout_height="159dp"
         android:layout_marginHorizontal="16dp"
         android:layout_marginTop="24dp"
-        app:layout_constraintBottom_toTopOf="@id/bottomAppBar"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavigationView"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.355"
         app:layout_constraintStart_toStartOf="parent"
@@ -151,58 +151,20 @@
         android:textColor="#ffffff"
         android:textSize="20sp"
         app:cornerRadius="12dp"
-        app:layout_constraintBottom_toTopOf="@+id/bottomAppBar"
+        app:layout_constraintBottom_toTopOf="@+id/bottomNavigationView"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.437"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/recyclerUsers" />
 
-    <com.google.android.material.bottomappbar.BottomAppBar
-
-        android:layout_width="0dp"
-        android:layout_height="80dp"
-        app:backgroundTint="#E9EBED"
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavigationView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?android:attr/windowBackground"
+        app:menu="@menu/bottom_nav_menu"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
-
-    <!-- Custom Navbar: ImageButton 1 (Left) -->
-    <ImageButton
-        android:id="@+id/imageButton"
-        android:layout_width="101dp"
-        android:layout_height="56dp"
-        android:background="@drawable/round"
-        android:backgroundTint="#0F77FC"
-        app:circularflow_radiusInDP="360"
-        app:layout_constraintBottom_toBottomOf="@+id/bottomAppBar"
-        app:layout_constraintEnd_toStartOf="@+id/imageButton2"
-        app:layout_constraintHorizontal_bias="0.444"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/bottomAppBar"
-        app:srcCompat="@drawable/vector" />
-
-    <ImageButton
-        android:id="@+id/imageButton2"
-        android:layout_width="101dp"
-        android:layout_height="56dp"
-        android:layout_marginEnd="28dp"
-        android:background="@drawable/round"
-        android:backgroundTint="#0F77FC"
-        app:layout_constraintBottom_toBottomOf="@+id/bottomAppBar"
-        app:layout_constraintEnd_toStartOf="@+id/imageButton3"
-        app:layout_constraintTop_toTopOf="@+id/bottomAppBar"
-        app:srcCompat="@drawable/vector__1_" />
-
-    <ImageButton
-        android:id="@+id/imageButton3"
-        android:layout_width="101dp"
-        android:layout_height="56dp"
-        android:layout_marginEnd="32dp"
-        android:background="@drawable/round"
-        android:backgroundTint="#0F77FC"
-        app:layout_constraintBottom_toBottomOf="@+id/bottomAppBar"
-        app:layout_constraintEnd_toEndOf="@+id/bottomAppBar"
-        app:layout_constraintTop_toTopOf="@+id/bottomAppBar"
-        app:srcCompat="@drawable/vector__2_" />
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
