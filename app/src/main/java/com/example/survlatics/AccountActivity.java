@@ -16,23 +16,26 @@ public class AccountActivity extends AppCompatActivity {
         setContentView(R.layout.account);
 
         // Bottom bar buttons
-        BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigationView);
+        // ... inside onCreate ...
         Button btnLogout = findViewById(R.id.btnLogout2);
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigationView);
 
-        // Home button (optional - already on home)
+// Set Account as selected
+        bottomNavigationView.setSelectedItemId(R.id.nav_account);
+
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
 
             if (id == R.id.nav_home) {
-                // Handle Home click
+                startActivity(new Intent(this, HomeActivity.class));
+                overridePendingTransition(0, 0);
                 return true;
             } else if (id == R.id.nav_surveys) {
-                // Handle Survey click
+                startActivity(new Intent(this, CompleteActivity.class));
+                overridePendingTransition(0, 0);
                 return true;
             } else if (id == R.id.nav_account) {
-                // This is where your 'nav_account' logic goes!
-                startActivity(new Intent(this, AccountActivity.class));
-                return true;
+                return true; // Do nothing
             }
             return false;
         });
