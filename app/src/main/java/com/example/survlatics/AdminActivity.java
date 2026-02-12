@@ -3,9 +3,8 @@ package com.example.survlatics;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
-import android.widget.ImageButton;
-
 import androidx.appcompat.app.AppCompatActivity;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class AdminActivity extends AppCompatActivity {
 
@@ -14,28 +13,32 @@ public class AdminActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.home_admin);
 
-        // Bottom bar buttons
-        ImageButton btnHome = findViewById(R.id.imageButton);
-        ImageButton btnMiddle = findViewById(R.id.imageButton2);
-        ImageButton btnAccount = findViewById(R.id.imageButton3);
-
-        // Add Survey button
+        // UI Components
         Button btnAddSurvey = findViewById(R.id.btnAddSurvey);
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigationView);
 
-        // Home button
-        btnHome.setOnClickListener(v -> {
-            // Already on home
+        // 1. Set Home as selected icon
+        bottomNavigationView.setSelectedItemId(R.id.nav_home);
+
+        // 2. Navigation Logic
+        bottomNavigationView.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+
+            if (id == R.id.nav_home) {
+                return true; // Already here
+            } else if (id == R.id.nav_surveys) {
+                // You can point this to a "Manage Surveys" activity if you create one later
+                return true;
+            } else if (id == R.id.nav_account) {
+                // Navigate to the Admin's Account/User Management page
+                startActivity(new Intent(this, Accountadmin.class));
+                overridePendingTransition(0, 0);
+                return true;
+            }
+            return false;
         });
 
-        btnMiddle.setOnClickListener(v -> {
-            startActivity(new Intent(this, CompleteActivity.class));
-        });
-
-        btnAccount.setOnClickListener(v -> {
-            startActivity(new Intent(this, Accountadmin.class));
-        });
-
-        // ✅ ADD SURVEY ACTION
+        // Add Survey Action
         btnAddSurvey.setOnClickListener(v -> {
             startActivity(new Intent(this, AddSurveyActivity.class));
         });
