@@ -27,7 +27,9 @@ public class AdminActivity extends AppCompatActivity {
             if (id == R.id.nav_home) {
                 return true; // Already here
             } else if (id == R.id.nav_surveys) {
-                // You can point this to a "Manage Surveys" activity if you create one later
+                // -> OPEN THE NEW SURVEY LIST ACTIVITY <-
+                startActivity(new Intent(this, AdminSurveyListActivity.class));
+                overridePendingTransition(0, 0);
                 return true;
             } else if (id == R.id.nav_account) {
                 // Navigate to the Admin's Account/User Management page
