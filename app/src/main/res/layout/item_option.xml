@@ -1,26 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:padding="8dp"
-    android:gravity="center_vertical">
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="8dp">
 
-    <CheckBox
+    <com.google.android.material.checkbox.MaterialCheckBox
         android:id="@+id/checkOption"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:buttonTint="#4CAF50"
-        android:checked="false" />
+        android:layout_marginEnd="12dp"
+        android:checked="false"
+        app:buttonTint="#4CAF50" />
 
-    <EditText
-        android:id="@+id/etOptionText"
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:hint="Option Text"
-        android:inputType="textCapSentences"
-        android:background="@android:drawable/edit_text"
-        android:padding="10dp" />
+        app:boxCornerRadiusBottomEnd="12dp"
+        app:boxCornerRadiusBottomStart="12dp"
+        app:boxCornerRadiusTopEnd="12dp"
+        app:boxCornerRadiusTopStart="12dp"
+        app:boxStrokeColor="#0F77FC">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etOptionText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textCapSentences"
+            android:textSize="16sp" />
+
+    </com.google.android.material.textfield.TextInputLayout>
 
 </LinearLayout>

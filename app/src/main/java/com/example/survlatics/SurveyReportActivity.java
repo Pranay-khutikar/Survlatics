@@ -1,6 +1,8 @@
 package com.example.survlatics;
 
+import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.ViewGroup;
@@ -10,13 +12,14 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 
 import com.github.mikephil.charting.charts.PieChart;
-import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.utils.ColorTemplate;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -53,17 +56,48 @@ public class SurveyReportActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_survey_report);
 
+        // 1. Initialize Views
         analysisContainer = findViewById(R.id.analysisContainer);
         tvReportTitle = findViewById(R.id.tvReportTitle);
         surveyId = getIntent().getStringExtra("SURVEY_ID");
         db = FirebaseDatabase.getInstance().getReference();
 
+        // 2. Setup Bottom Navigation (FIXED: Moved inside onCreate)
+        setupNavigation();
+
+        // 3. Load Data
         if (surveyId != null) {
             fetchSurveyData();
         } else {
             Toast.makeText(this, "Error: No Survey ID provided", Toast.LENGTH_SHORT).show();
             finish();
         }
+    }
+
+    private void setupNavigation() {
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigationView);
+
+        // Set Home as selected icon
+        bottomNavigationView.setSelectedItemId(R.id.nav_home);
+
+        bottomNavigationView.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+
+            if (id == R.id.nav_home) {
+                startActivity(new Intent(this, AdminActivity.class));
+                overridePendingTransition(0, 0);
+                return true;
+            } else if (id == R.id.nav_surveys) {
+                startActivity(new Intent(this, AdminSurveyListActivity.class));
+                overridePendingTransition(0, 0);
+                return true;
+            } else if (id == R.id.nav_account) {
+                startActivity(new Intent(this, Accountadmin.class));
+                overridePendingTransition(0, 0);
+                return true;
+            }
+            return false;
+        });
     }
 
     private void fetchSurveyData() {
@@ -125,17 +159,17 @@ public class SurveyReportActivity extends AppCompatActivity {
                     String qText = questionTexts.get(qId);
                     List<String> answers = answersMap.getOrDefault(qId, new ArrayList<>());
 
-                    addQuestionTitle(qText);
+                    LinearLayout cardLayout = createQuestionCard(qText);
 
                     if (answers.isEmpty()) {
-                        addNoDataMessage();
+                        addNoDataMessage(cardLayout);
                         continue;
                     }
 
                     if ("mcq".equalsIgnoreCase(type)) {
-                        generateDonutChart(answers);
+                        generateDonutChart(answers, cardLayout);
                     } else if ("text".equalsIgnoreCase(type)) {
-                        generateTextAnalysis(answers);
+                        generateTextAnalysis(answers, cardLayout);
                     }
                 }
             }
@@ -148,28 +182,49 @@ public class SurveyReportActivity extends AppCompatActivity {
     }
 
     private void addReportHeader() {
+        if (tvReportTitle.getParent() != null) {
+            ((ViewGroup) tvReportTitle.getParent()).removeView(tvReportTitle);
+        }
         analysisContainer.addView(tvReportTitle);
     }
 
-    private void addQuestionTitle(String text) {
-        TextView tv = new TextView(this);
-        tv.setText(text);
-        tv.setTextSize(18f);
-        tv.setTextColor(Color.BLACK);
-        tv.setTypeface(null, android.graphics.Typeface.BOLD);
-        tv.setPadding(0, 40, 0, 16);
-        analysisContainer.addView(tv);
+    private LinearLayout createQuestionCard(String questionText) {
+        CardView card = new CardView(this);
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        cardParams.setMargins(0, 16, 0, 32);
+        card.setLayoutParams(cardParams);
+        card.setRadius(24f);
+        card.setCardElevation(12f);
+        card.setUseCompatPadding(true);
+
+        LinearLayout cardInnerLayout = new LinearLayout(this);
+        cardInnerLayout.setOrientation(LinearLayout.VERTICAL);
+        cardInnerLayout.setPadding(40, 40, 40, 40);
+
+        TextView tvQ = new TextView(this);
+        tvQ.setText(questionText);
+        tvQ.setTextSize(18f);
+        tvQ.setTextColor(Color.parseColor("#212121"));
+        tvQ.setTypeface(null, Typeface.BOLD);
+        tvQ.setPadding(0, 0, 0, 24);
+
+        cardInnerLayout.addView(tvQ);
+        card.addView(cardInnerLayout);
+        analysisContainer.addView(card);
+
+        return cardInnerLayout;
     }
 
-    private void addNoDataMessage() {
+    private void addNoDataMessage(LinearLayout layout) {
         TextView tv = new TextView(this);
-        tv.setText("No responses yet.");
+        tv.setText("No responses yet for this question.");
         tv.setTextColor(Color.GRAY);
-        tv.setPadding(0, 0, 0, 20);
-        analysisContainer.addView(tv);
+        tv.setPadding(0, 0, 0, 10);
+        layout.addView(tv);
     }
 
-    private void generateDonutChart(List<String> answers) {
+    private void generateDonutChart(List<String> answers, LinearLayout layout) {
         Map<String, Integer> freqMap = new HashMap<>();
         for (String ans : answers) {
             freqMap.put(ans, freqMap.getOrDefault(ans, 0) + 1);
@@ -177,15 +232,14 @@ public class SurveyReportActivity extends AppCompatActivity {
 
         PieChart pieChart = new PieChart(this);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, 700);
-        params.setMargins(0, 0, 0, 40);
+                ViewGroup.LayoutParams.MATCH_PARENT, 650);
         pieChart.setLayoutParams(params);
 
         pieChart.setDrawHoleEnabled(true);
-        pieChart.setHoleRadius(50f);
-        pieChart.setTransparentCircleRadius(55f);
+        pieChart.setHoleRadius(58f);
         pieChart.setCenterText("MCQ\nResults");
         pieChart.setCenterTextSize(14f);
+        pieChart.setCenterTextColor(Color.GRAY);
 
         List<PieEntry> entries = new ArrayList<>();
         for (Map.Entry<String, Integer> entry : freqMap.entrySet()) {
@@ -194,24 +248,19 @@ public class SurveyReportActivity extends AppCompatActivity {
 
         PieDataSet dataSet = new PieDataSet(entries, "");
         dataSet.setColors(ColorTemplate.MATERIAL_COLORS);
-        dataSet.setValueTextSize(14f);
+        dataSet.setValueTextSize(12f);
         dataSet.setValueTextColor(Color.WHITE);
 
         PieData data = new PieData(dataSet);
         pieChart.setData(data);
         pieChart.getDescription().setEnabled(false);
-
-        Legend legend = pieChart.getLegend();
-        legend.setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM);
-        legend.setHorizontalAlignment(Legend.LegendHorizontalAlignment.CENTER);
-        legend.setOrientation(Legend.LegendOrientation.HORIZONTAL);
-        legend.setDrawInside(false);
-
+        pieChart.getLegend().setWordWrapEnabled(true);
         pieChart.invalidate();
-        analysisContainer.addView(pieChart);
+
+        layout.addView(pieChart);
     }
 
-    private void generateTextAnalysis(List<String> answers) {
+    private void generateTextAnalysis(List<String> answers, LinearLayout layout) {
         Map<String, Integer> freqMap = new HashMap<>();
         for (String ans : answers) {
             String lower = ans.toLowerCase().trim();
@@ -220,23 +269,23 @@ public class SurveyReportActivity extends AppCompatActivity {
         String mostRepeated = Collections.max(freqMap.entrySet(), Map.Entry.comparingByValue()).getKey();
 
         TextView tvMostRepeated = new TextView(this);
-        tvMostRepeated.setText("📌 Most Repeated Answer: \n\"" + mostRepeated + "\"");
-        tvMostRepeated.setTextSize(16f);
+        tvMostRepeated.setText("📌 Most Repeated: \"" + mostRepeated + "\"");
+        tvMostRepeated.setTextSize(15f);
         tvMostRepeated.setTextColor(Color.parseColor("#00796B"));
         tvMostRepeated.setPadding(0, 10, 0, 20);
-        analysisContainer.addView(tvMostRepeated);
+        layout.addView(tvMostRepeated);
 
         TextView tvSummary = new TextView(this);
-        tvSummary.setText("🤖 AI is analyzing responses...");
-        tvSummary.setTextSize(14f);
+        tvSummary.setText("🤖 Analyzing with AI...");
+        tvSummary.setTextSize(14);
         tvSummary.setTextColor(Color.DKGRAY);
-        tvSummary.setPadding(0, 20, 0, 40);
-        analysisContainer.addView(tvSummary);
+        tvSummary.setPadding(0, 10, 0, 10);
+        layout.addView(tvSummary);
 
-        fetchGeminiAnalysis(answers, tvSummary);
+        fetchGeminiAnalysis(answers, tvSummary, layout);
     }
 
-    private void fetchGeminiAnalysis(List<String> answers, TextView tvSummary) {
+    private void fetchGeminiAnalysis(List<String> answers, TextView tvSummary, LinearLayout layout) {
         String prompt = "Analyze these survey responses: " + answers.toString() + ". " +
                 "Return ONLY a valid JSON object. Required keys: " +
                 "'summary' (2-sentence feedback summary), " +
@@ -246,9 +295,8 @@ public class SurveyReportActivity extends AppCompatActivity {
         OkHttpClient client = new OkHttpClient();
         MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
-        // Fixed URL to v1 stable endpoint to prevent 404
-// Change "gemini-1.5-flash" to "gemini-2.5-flash" or "gemini-3-flash"
         String url = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=" + BuildConfig.GEMINI_API_KEY;
+
         try {
             JSONObject jsonBody = new JSONObject();
             JSONArray contents = new JSONArray();
@@ -263,15 +311,12 @@ public class SurveyReportActivity extends AppCompatActivity {
             jsonBody.put("contents", contents);
 
             RequestBody body = RequestBody.create(jsonBody.toString(), JSON);
-            Request request = new Request.Builder()
-                    .url(url)
-                    .post(body)
-                    .build();
+            Request request = new Request.Builder().url(url).post(body).build();
 
             client.newCall(request).enqueue(new Callback() {
                 @Override
                 public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                    runOnUiThread(() -> tvSummary.setText("❌ AI Analysis failed: " + e.getMessage()));
+                    runOnUiThread(() -> tvSummary.setText("❌ AI failed: " + e.getMessage()));
                 }
 
                 @Override
@@ -287,11 +332,8 @@ public class SurveyReportActivity extends AppCompatActivity {
                     try {
                         JSONObject jsonObject = new JSONObject(responseBody);
                         String aiReply = jsonObject.getJSONArray("candidates")
-                                .getJSONObject(0)
-                                .getJSONObject("content")
-                                .getJSONArray("parts")
-                                .getJSONObject(0)
-                                .getString("text");
+                                .getJSONObject(0).getJSONObject("content")
+                                .getJSONArray("parts").getJSONObject(0).getString("text");
 
                         aiReply = aiReply.replace("```json", "").replace("```", "").trim();
 
@@ -303,29 +345,27 @@ public class SurveyReportActivity extends AppCompatActivity {
 
                         runOnUiThread(() -> {
                             tvSummary.setText("📝 AI Summary: \n" + summaryText);
-                            generateSentimentPieChart(pos, neg, neu);
+                            generateSentimentPieChart(pos, neg, neu, layout);
                         });
 
                     } catch (Exception e) {
-                        Log.e("JSON_ERROR", "Parsing failed: " + e.getMessage());
-                        runOnUiThread(() -> tvSummary.setText("❌ Failed to parse AI response."));
+                        runOnUiThread(() -> tvSummary.setText("❌ Failed to parse AI."));
                     }
                 }
             });
         } catch (Exception e) {
-            tvSummary.setText("❌ Error building request: " + e.getMessage());
+            tvSummary.setText("❌ Error: " + e.getMessage());
         }
     }
 
-    private void generateSentimentPieChart(int pos, int neg, int neu) {
+    private void generateSentimentPieChart(int pos, int neg, int neu, LinearLayout layout) {
         if (pos == 0 && neg == 0 && neu == 0) return;
 
         PieChart pieChart = new PieChart(this);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, 600);
-        params.setMargins(0, 10, 0, 40);
+                ViewGroup.LayoutParams.MATCH_PARENT, 500);
+        params.setMargins(0, 20, 0, 10);
         pieChart.setLayoutParams(params);
-
         pieChart.setDrawHoleEnabled(false);
 
         List<PieEntry> entries = new ArrayList<>();
@@ -336,13 +376,13 @@ public class SurveyReportActivity extends AppCompatActivity {
         PieDataSet dataSet = new PieDataSet(entries, "");
         int[] colors = {Color.parseColor("#4CAF50"), Color.parseColor("#F44336"), Color.parseColor("#9E9E9E")};
         dataSet.setColors(colors);
-        dataSet.setValueTextSize(14f);
+        dataSet.setValueTextSize(12f);
         dataSet.setValueTextColor(Color.WHITE);
 
         pieChart.setData(new PieData(dataSet));
         pieChart.getDescription().setEnabled(false);
         pieChart.invalidate();
 
-        analysisContainer.addView(pieChart);
+        layout.addView(pieChart);
     }
 }
