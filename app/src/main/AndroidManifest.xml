@@ -42,8 +42,9 @@
             android:name=".Accountadmin"
             android:exported="false" />
         <activity android:name=".AddSurveyActivity" />
-
+        <activity android:name=".TakeSurveyActivity" android:exported="false" />
         <!-- Preloaded Fonts -->
+        <activity android:name=".CompleteActivity" android:exported="false" />
         <meta-data
             android:name="preloaded_fonts"
             android:resource="@array/preloaded_fonts" />
