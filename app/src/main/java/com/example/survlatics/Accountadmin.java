@@ -2,6 +2,7 @@ package com.example.survlatics;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log; // Added for debugging
 import android.view.View;
 import android.widget.*;
 
@@ -27,7 +28,7 @@ public class Accountadmin extends AppCompatActivity {
     private EditText etEmail, etPassword;
     private AutoCompleteTextView spinnerRole;
     private Button btnAddUser;
-    private Button btnLogout; // Use this variable for the logout logic
+    private Button btnLogout;
 
     private RecyclerView recyclerUsers;
     private UserAdapter userAdapter;
@@ -58,7 +59,6 @@ public class Accountadmin extends AppCompatActivity {
         spinnerRole = findViewById(R.id.spinnerRole);
         btnAddUser = findViewById(R.id.btnAddUser);
 
-        // Initializing the logout button (using the ID from your layout)
         btnLogout = findViewById(R.id.btnLogout);
         recyclerUsers = findViewById(R.id.recyclerUsers);
 
@@ -76,23 +76,23 @@ public class Accountadmin extends AppCompatActivity {
         // --- Bottom Navigation ---
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigationView);
 
-        // Highlight the 'Account' icon because we are on the Account Admin page
         bottomNavigationView.setSelectedItemId(R.id.nav_account);
 
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
 
             if (id == R.id.nav_home) {
-                // Navigate back to the Admin dashboard
                 startActivity(new Intent(this, AdminActivity.class));
                 overridePendingTransition(0, 0);
                 finish();
                 return true;
             } else if (id == R.id.nav_surveys) {
+                startActivity(new Intent(this, AdminSurveyListActivity.class));
+                overridePendingTransition(0, 0);
+                finish();
                 // Future: Manage published surveys
                 return true;
             } else if (id == R.id.nav_account) {
-                // Already here
                 return true;
             }
             return false;
@@ -128,7 +128,10 @@ public class Accountadmin extends AppCompatActivity {
                         loadUsers();
                     }
                 })
-                .addOnFailureListener(e -> hideAdminUI());
+                .addOnFailureListener(e -> {
+                    Log.e("Accountadmin", "Failed to verify admin role: ", e);
+                    hideAdminUI();
+                });
 
         btnAddUser.setOnClickListener(v -> addUser());
     }
@@ -144,7 +147,14 @@ public class Accountadmin extends AppCompatActivity {
     private void loadUsers() {
         firestore.collection("Users")
                 .addSnapshotListener((value, error) -> {
-                    if (error != null || value == null) return;
+                    // Added error logging here so it doesn't fail silently
+                    if (error != null) {
+                        Log.e("Accountadmin", "Error loading users: ", error);
+                        Toast.makeText(this, "Error fetching users. Check logcat.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    if (value == null) return;
+
                     userList.clear();
                     for (DocumentSnapshot doc : value.getDocuments()) {
                         String email = doc.getString("email");

@@ -2,6 +2,7 @@ package com.example.survlatics;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -9,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.facebook.shimmer.ShimmerFrameLayout; //
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -22,6 +24,7 @@ import java.util.List;
 public class AdminSurveyListActivity extends AppCompatActivity {
 
     private RecyclerView recyclerView;
+    private ShimmerFrameLayout shimmerFrameLayout; // Added Shimmer variable
     private SurveyAdapter adapter;
     private List<String> surveyTitles;
     private List<String> surveyIds;
@@ -30,11 +33,11 @@ public class AdminSurveyListActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // Make sure this name matches exactly what you named the XML file!
         setContentView(R.layout.admin_survey_list);
 
         // 1. Initialize Views
-        recyclerView = findViewById(R.id.compl_list); // From your XML
+        recyclerView = findViewById(R.id.compl_list);
+        shimmerFrameLayout = findViewById(R.id.shimmer_view_container); // Initialize Shimmer
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigationView);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -45,7 +48,6 @@ public class AdminSurveyListActivity extends AppCompatActivity {
 
         // 2. Setup Adapter
         adapter = new SurveyAdapter(surveyTitles, surveyIds, "View Analysis", surveyId -> {
-            // When clicked, go to the analysis page
             Intent intent = new Intent(AdminSurveyListActivity.this, SurveyReportActivity.class);
             intent.putExtra("SURVEY_ID", surveyId);
             startActivity(intent);
@@ -56,19 +58,18 @@ public class AdminSurveyListActivity extends AppCompatActivity {
         // 3. Fetch Data
         loadAllSurveys();
 
-        // 4. Bottom Navigation Setup (Highlight "Surveys" tab)
+        // 4. Bottom Navigation Setup
         bottomNavigationView.setSelectedItemId(R.id.nav_surveys);
 
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
 
             if (id == R.id.nav_home) {
-                // Go back to Admin Home
                 startActivity(new Intent(this, AdminActivity.class));
                 overridePendingTransition(0, 0);
                 return true;
             } else if (id == R.id.nav_surveys) {
-                return true; // Already here
+                return true;
             } else if (id == R.id.nav_account) {
                 startActivity(new Intent(this, Accountadmin.class));
                 overridePendingTransition(0, 0);
@@ -79,6 +80,11 @@ public class AdminSurveyListActivity extends AppCompatActivity {
     }
 
     private void loadAllSurveys() {
+        // Start shimmer animation and hide the real list
+        shimmerFrameLayout.startShimmer();
+        shimmerFrameLayout.setVisibility(View.VISIBLE);
+        recyclerView.setVisibility(View.GONE);
+
         db.child("surveys").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -92,11 +98,22 @@ public class AdminSurveyListActivity extends AppCompatActivity {
                         surveyIds.add(data.getKey());
                     }
                 }
+
+                // Stop shimmer and reveal the list
+                shimmerFrameLayout.stopShimmer();
+                shimmerFrameLayout.setVisibility(View.GONE);
+                recyclerView.setVisibility(View.VISIBLE);
+
                 adapter.notifyDataSetChanged();
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
+                // Ensure shimmer stops even if the database call fails
+                shimmerFrameLayout.stopShimmer();
+                shimmerFrameLayout.setVisibility(View.GONE);
+                recyclerView.setVisibility(View.VISIBLE);
+
                 Toast.makeText(AdminSurveyListActivity.this, "Failed to load surveys", Toast.LENGTH_SHORT).show();
             }
         });
