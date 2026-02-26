@@ -34,7 +34,19 @@ public class MainActivity extends AppCompatActivity {
         btnLogin = findViewById(R.id.button3);
 
         // 🔁 Auto-login if already authenticated
-       //
+        FirebaseUser currentUser = firebaseAuth.getCurrentUser();
+        if (currentUser != null) {
+            // Disable the button and change text so the user knows it's loading
+            btnLogin.setEnabled(false);
+            btnLogin.setText("Logging in...");
+
+            // Check their role in Firestore and send them to the correct screen
+            redirectByRole(currentUser.getUid());
+
+            return; // Stop the rest of the onCreate method from running so they skip the login process
+        }
+
+        // If not logged in, wait for them to click the login button
         btnLogin.setOnClickListener(v -> attemptLogin());
     }
 
@@ -61,11 +73,13 @@ public class MainActivity extends AppCompatActivity {
         }
 
         btnLogin.setEnabled(false);
+        btnLogin.setText("Logging in...");
 
         firebaseAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
 
                     btnLogin.setEnabled(true);
+                    btnLogin.setText("Login");
 
                     if (!task.isSuccessful()) {
                         Toast.makeText(
@@ -100,6 +114,9 @@ public class MainActivity extends AppCompatActivity {
                                 Toast.LENGTH_LONG
                         ).show();
                         firebaseAuth.signOut();
+                        // Reset button if auto-login fails
+                        btnLogin.setEnabled(true);
+                        btnLogin.setText("Login");
                         return;
                     }
 
@@ -112,6 +129,8 @@ public class MainActivity extends AppCompatActivity {
                                 Toast.LENGTH_SHORT
                         ).show();
                         firebaseAuth.signOut();
+                        btnLogin.setEnabled(true);
+                        btnLogin.setText("Login");
                         return;
                     }
 
@@ -130,6 +149,8 @@ public class MainActivity extends AppCompatActivity {
                                 Toast.LENGTH_SHORT
                         ).show();
                         firebaseAuth.signOut();
+                        btnLogin.setEnabled(true);
+                        btnLogin.setText("Login");
                         return;
                     }
 
@@ -144,6 +165,8 @@ public class MainActivity extends AppCompatActivity {
                             Toast.LENGTH_SHORT
                     ).show();
                     firebaseAuth.signOut();
+                    btnLogin.setEnabled(true);
+                    btnLogin.setText("Login");
                 });
     }
 }
