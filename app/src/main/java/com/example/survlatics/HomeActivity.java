@@ -4,7 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View; // Needed for View.VISIBLE and View.GONE
 import android.widget.Toast;
-
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -40,7 +40,11 @@ public class HomeActivity extends AppCompatActivity {
         shimmerFrameLayout = findViewById(R.id.shimmer_view_container); // Initialize Shimmer
 
         listView.setLayoutManager(new LinearLayoutManager(this));
-
+// Inside onCreate(), after initializing your other views:
+        FloatingActionButton fabChatbot = findViewById(R.id.fabChatbot);
+        fabChatbot.setOnClickListener(v -> {
+            startActivity(new Intent(HomeActivity.this, ChatbotActivity.class));
+        });
         surveyTitles = new ArrayList<>();
         surveyIds = new ArrayList<>();
 
