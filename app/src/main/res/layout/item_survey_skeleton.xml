@@ -1,22 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="16dp"
-    android:layout_margin="8dp"
-    android:background="#FFFFFF"
-    android:elevation="2dp">
+    android:layout_marginHorizontal="8dp"
+    android:layout_marginBottom="16dp"
+    app:cardBackgroundColor="@color/bg_card"
+    app:cardCornerRadius="24dp"
+    app:cardElevation="0dp"
+    app:strokeWidth="0dp">
 
-    <View
-        android:layout_width="200dp"
-        android:layout_height="24dp"
-        android:background="#E0E0E0"
-        android:layout_marginBottom="12dp" />
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="20dp">
 
-    <View
-        android:layout_width="100dp"
-        android:layout_height="16dp"
-        android:background="#E0E0E0" />
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/skeletonTitle"
+            android:layout_width="200dp"
+            android:layout_height="24dp"
+            app:cardBackgroundColor="@color/bg_bottom_nav"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-</LinearLayout>
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/skeletonStatus"
+            android:layout_width="100dp"
+            android:layout_height="16dp"
+            android:layout_marginTop="12dp"
+            app:cardBackgroundColor="@color/bg_bottom_nav"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="0dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/skeletonTitle" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/skeletonButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            app:cardBackgroundColor="@color/bg_bottom_nav"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="0dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

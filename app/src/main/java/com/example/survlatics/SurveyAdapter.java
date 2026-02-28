@@ -1,5 +1,9 @@
 package com.example.survlatics;
 
+import android.animation.ObjectAnimator;
+import android.animation.PropertyValuesHolder;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,14 +16,13 @@ public class SurveyAdapter extends RecyclerView.Adapter<SurveyAdapter.ViewHolder
 
     private List<String> titles;
     private List<String> ids;
-    private String statusText; // Added to store "Pending" or "Completed"
+    private String statusText;
     private OnItemClickListener listener;
 
     public interface OnItemClickListener {
         void onItemClick(String surveyId);
     }
 
-    // Updated to accept the statusText String
     public SurveyAdapter(List<String> titles, List<String> ids, String statusText, OnItemClickListener listener) {
         this.titles = titles;
         this.ids = ids;
@@ -39,10 +42,18 @@ public class SurveyAdapter extends RecyclerView.Adapter<SurveyAdapter.ViewHolder
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         holder.titleTextView.setText(titles.get(position));
 
-        // This line updates the status TextView on the card
-        holder.statusTextView.setText("Status: " + statusText);
+        // Format the status text neatly
+        holder.statusTextView.setText(statusText);
 
-        holder.itemView.setOnClickListener(v -> listener.onItemClick(ids.get(position)));
+        // Add soft tactile animation on card click before triggering the intent
+        holder.itemView.setOnClickListener(v -> {
+            animateClick(v);
+
+            // Adding a tiny delay lets the animation play before the screen transitions
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                listener.onItemClick(ids.get(position));
+            }, 150);
+        });
     }
 
     @Override
@@ -50,15 +61,22 @@ public class SurveyAdapter extends RecyclerView.Adapter<SurveyAdapter.ViewHolder
         return titles.size();
     }
 
+    // Soft scale animation for card interactions
+    private void animateClick(View view) {
+        PropertyValuesHolder scaleX = PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 0.95f, 1f);
+        PropertyValuesHolder scaleY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 0.95f, 1f);
+        ObjectAnimator animator = ObjectAnimator.ofPropertyValuesHolder(view, scaleX, scaleY);
+        animator.setDuration(200);
+        animator.start();
+    }
+
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView titleTextView;
-        TextView statusTextView; // Added for the status text
+        TextView statusTextView;
 
         public ViewHolder(View itemView) {
             super(itemView);
             titleTextView = itemView.findViewById(R.id.surveyTitle);
-
-            // Make sure R.id.surveyStatus matches the ID in your item_survey_card.xml
             statusTextView = itemView.findViewById(R.id.surveyStatus);
         }
     }

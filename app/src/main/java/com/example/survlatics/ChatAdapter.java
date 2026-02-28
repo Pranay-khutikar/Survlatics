@@ -12,7 +12,6 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
 
     private List<ChatMessage> messageList;
 
-    // ---> THIS IS THE MISSING PIECE THE ERROR IS COMPLAINING ABOUT <---
     public ChatAdapter(List<ChatMessage> messageList) {
         this.messageList = messageList;
     }
@@ -28,6 +27,7 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
     public void onBindViewHolder(@NonNull ChatViewHolder holder, int position) {
         ChatMessage message = messageList.get(position);
 
+        // Toggle visibility based on who sent the message
         if (message.isBot()) {
             holder.tvBotMessage.setVisibility(View.VISIBLE);
             holder.tvBotMessage.setText(message.getText());

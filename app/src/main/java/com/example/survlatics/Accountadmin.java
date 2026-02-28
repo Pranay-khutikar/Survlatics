@@ -1,8 +1,10 @@
 package com.example.survlatics;
 
+import android.animation.ObjectAnimator;
+import android.animation.PropertyValuesHolder;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log; // Added for debugging
+import android.util.Log;
 import android.view.View;
 import android.widget.*;
 
@@ -75,7 +77,6 @@ public class Accountadmin extends AppCompatActivity {
 
         // --- Bottom Navigation ---
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigationView);
-
         bottomNavigationView.setSelectedItemId(R.id.nav_account);
 
         bottomNavigationView.setOnItemSelectedListener(item -> {
@@ -83,14 +84,13 @@ public class Accountadmin extends AppCompatActivity {
 
             if (id == R.id.nav_home) {
                 startActivity(new Intent(this, AdminActivity.class));
-                overridePendingTransition(0, 0);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                 finish();
                 return true;
             } else if (id == R.id.nav_surveys) {
                 startActivity(new Intent(this, AdminSurveyListActivity.class));
-                overridePendingTransition(0, 0);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                 finish();
-                // Future: Manage published surveys
                 return true;
             } else if (id == R.id.nav_account) {
                 return true;
@@ -101,10 +101,12 @@ public class Accountadmin extends AppCompatActivity {
         // --- Logout Button Action ---
         if (btnLogout != null) {
             btnLogout.setOnClickListener(v -> {
+                animateClick(v);
                 adminAuth.signOut();
                 Intent intent = new Intent(this, MainActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                 finish();
             });
         }
@@ -133,7 +135,19 @@ public class Accountadmin extends AppCompatActivity {
                     hideAdminUI();
                 });
 
-        btnAddUser.setOnClickListener(v -> addUser());
+        btnAddUser.setOnClickListener(v -> {
+            animateClick(v);
+            addUser();
+        });
+    }
+
+    // --- Soft Scale Animation for Interactions ---
+    private void animateClick(View view) {
+        PropertyValuesHolder scaleX = PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 0.95f, 1f);
+        PropertyValuesHolder scaleY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 0.95f, 1f);
+        ObjectAnimator animator = ObjectAnimator.ofPropertyValuesHolder(view, scaleX, scaleY);
+        animator.setDuration(200);
+        animator.start();
     }
 
     private void hideAdminUI() {
@@ -147,7 +161,6 @@ public class Accountadmin extends AppCompatActivity {
     private void loadUsers() {
         firestore.collection("Users")
                 .addSnapshotListener((value, error) -> {
-                    // Added error logging here so it doesn't fail silently
                     if (error != null) {
                         Log.e("Accountadmin", "Error loading users: ", error);
                         Toast.makeText(this, "Error fetching users. Check logcat.", Toast.LENGTH_SHORT).show();
@@ -193,6 +206,11 @@ public class Accountadmin extends AppCompatActivity {
                                 etEmail.setText("");
                                 etPassword.setText("");
                                 spinnerRole.setText("user", false);
+
+                                // Clear focus to drop the soft keyboard and let the UI settle
+                                etEmail.clearFocus();
+                                etPassword.clearFocus();
+                                spinnerRole.clearFocus();
                             })
                             .addOnFailureListener(e ->
                                     Toast.makeText(this, "Failed to save data", Toast.LENGTH_SHORT).show()

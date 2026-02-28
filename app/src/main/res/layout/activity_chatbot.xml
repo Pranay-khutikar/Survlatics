@@ -1,51 +1,104 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F5F5">
+    android:background="@color/bg_app"
+    android:animateLayoutChanges="true">
 
-    <TextView
-        android:id="@+id/tvChatHeader"
+    <LinearLayout
+        android:id="@+id/headerLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white"
-        android:padding="16dp"
-        android:text="Survlatics Help Assistant"
-        android:textColor="@color/black"
-        android:textSize="18sp"
-        android:textStyle="bold" />
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="48dp"
+        android:paddingBottom="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:padding="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_revert"
+            app:tint="@color/text_primary" />
+
+        <TextView
+            android:id="@+id/tvChatHeader"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:fontFamily="sans-serif-medium"
+            android:text="Survlatics Guide"
+            android:textColor="@color/text_primary"
+            android:textSize="24sp" />
+    </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvChatMessages"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_above="@id/inputContainer"
-        android:layout_below="@id/tvChatHeader"
-        android:padding="8dp" />
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="16dp"
+        app:layout_constraintBottom_toTopOf="@id/inputContainerCard"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/headerLayout" />
 
-    <LinearLayout
-        android:id="@+id/inputContainer"
+    <androidx.cardview.widget.CardView
+        android:id="@+id/inputContainerCard"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:background="@color/white"
-        android:orientation="horizontal"
-        android:padding="8dp">
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="24dp"
+        app:cardBackgroundColor="@color/bg_card"
+        app:cardCornerRadius="32dp"
+        app:cardElevation="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
 
-        <EditText
-            android:id="@+id/etChatMessage"
-            android:layout_width="0dp"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="@drawable/edittext"
-            android:hint="Ask how to take a survey..."
-            android:padding="12dp" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="8dp">
 
-        <Button
-            android:id="@+id/btnSendChat"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:text="Send" />
-    </LinearLayout>
-</RelativeLayout>
+            <EditText
+                android:id="@+id/etChatMessage"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@null"
+                android:hint="Ask me anything..."
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="12dp"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_secondary"
+                android:textSize="16sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSendChat"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:layout_marginStart="8dp"
+                android:backgroundTint="@color/accent_primary"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:text="Send"
+                android:textColor="@color/text_on_accent"
+                app:cornerRadius="24dp"
+                app:elevation="0dp" />
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

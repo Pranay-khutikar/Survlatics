@@ -10,7 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.facebook.shimmer.ShimmerFrameLayout; //
+import com.facebook.shimmer.ShimmerFrameLayout;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -24,7 +24,7 @@ import java.util.List;
 public class AdminSurveyListActivity extends AppCompatActivity {
 
     private RecyclerView recyclerView;
-    private ShimmerFrameLayout shimmerFrameLayout; // Added Shimmer variable
+    private ShimmerFrameLayout shimmerFrameLayout;
     private SurveyAdapter adapter;
     private List<String> surveyTitles;
     private List<String> surveyIds;
@@ -37,7 +37,7 @@ public class AdminSurveyListActivity extends AppCompatActivity {
 
         // 1. Initialize Views
         recyclerView = findViewById(R.id.compl_list);
-        shimmerFrameLayout = findViewById(R.id.shimmer_view_container); // Initialize Shimmer
+        shimmerFrameLayout = findViewById(R.id.shimmer_view_container);
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigationView);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -47,10 +47,12 @@ public class AdminSurveyListActivity extends AppCompatActivity {
         db = FirebaseDatabase.getInstance().getReference();
 
         // 2. Setup Adapter
+        // The adapter already has the soft click animation built-in from our earlier changes!
         adapter = new SurveyAdapter(surveyTitles, surveyIds, "View Analysis", surveyId -> {
             Intent intent = new Intent(AdminSurveyListActivity.this, SurveyReportActivity.class);
             intent.putExtra("SURVEY_ID", surveyId);
             startActivity(intent);
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         });
 
         recyclerView.setAdapter(adapter);
@@ -66,13 +68,13 @@ public class AdminSurveyListActivity extends AppCompatActivity {
 
             if (id == R.id.nav_home) {
                 startActivity(new Intent(this, AdminActivity.class));
-                overridePendingTransition(0, 0);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                 return true;
             } else if (id == R.id.nav_surveys) {
                 return true;
             } else if (id == R.id.nav_account) {
                 startActivity(new Intent(this, Accountadmin.class));
-                overridePendingTransition(0, 0);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                 return true;
             }
             return false;
@@ -109,7 +111,6 @@ public class AdminSurveyListActivity extends AppCompatActivity {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                // Ensure shimmer stops even if the database call fails
                 shimmerFrameLayout.stopShimmer();
                 shimmerFrameLayout.setVisibility(View.GONE);
                 recyclerView.setVisibility(View.VISIBLE);

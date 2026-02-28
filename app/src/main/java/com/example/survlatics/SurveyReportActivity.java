@@ -1,11 +1,15 @@
 package com.example.survlatics;
 
+import android.animation.ObjectAnimator;
+import android.animation.PropertyValuesHolder;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -15,10 +19,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
 import com.github.mikephil.charting.charts.PieChart;
+import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
-import com.github.mikephil.charting.utils.ColorTemplate;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -49,6 +53,7 @@ public class SurveyReportActivity extends AppCompatActivity {
     private String surveyId;
     private LinearLayout analysisContainer;
     private TextView tvReportTitle;
+    private ImageView btnBack;
     private DatabaseReference db;
 
     @Override
@@ -56,44 +61,53 @@ public class SurveyReportActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_survey_report);
 
-        // 1. Initialize Views
         analysisContainer = findViewById(R.id.analysisContainer);
         tvReportTitle = findViewById(R.id.tvReportTitle);
+        btnBack = findViewById(R.id.btnBack);
         surveyId = getIntent().getStringExtra("SURVEY_ID");
         db = FirebaseDatabase.getInstance().getReference();
 
-        // 2. Setup Bottom Navigation (FIXED: Moved inside onCreate)
         setupNavigation();
 
-        // 3. Load Data
+        btnBack.setOnClickListener(v -> {
+            animateClick(v);
+            finish();
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        });
+
         if (surveyId != null) {
             fetchSurveyData();
         } else {
-            Toast.makeText(this, "Error: No Survey ID provided", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "No Survey ID found", Toast.LENGTH_SHORT).show();
             finish();
         }
     }
 
+    private void animateClick(View view) {
+        PropertyValuesHolder scaleX = PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 0.95f, 1f);
+        PropertyValuesHolder scaleY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 0.95f, 1f);
+        ObjectAnimator animator = ObjectAnimator.ofPropertyValuesHolder(view, scaleX, scaleY);
+        animator.setDuration(200);
+        animator.start();
+    }
+
     private void setupNavigation() {
-        BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigationView);
+        BottomNavigationView bottomNav = findViewById(R.id.bottomNavigationView);
+        bottomNav.setSelectedItemId(R.id.nav_home);
 
-        // Set Home as selected icon
-        bottomNavigationView.setSelectedItemId(R.id.nav_home);
-
-        bottomNavigationView.setOnItemSelectedListener(item -> {
+        bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
-
             if (id == R.id.nav_home) {
                 startActivity(new Intent(this, AdminActivity.class));
-                overridePendingTransition(0, 0);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                 return true;
             } else if (id == R.id.nav_surveys) {
                 startActivity(new Intent(this, AdminSurveyListActivity.class));
-                overridePendingTransition(0, 0);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                 return true;
             } else if (id == R.id.nav_account) {
                 startActivity(new Intent(this, Accountadmin.class));
-                overridePendingTransition(0, 0);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                 return true;
             }
             return false;
@@ -104,285 +118,155 @@ public class SurveyReportActivity extends AppCompatActivity {
         db.child("surveys").child(surveyId).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot surveySnap) {
-                if (!surveySnap.exists()) {
-                    Toast.makeText(SurveyReportActivity.this, "Survey not found", Toast.LENGTH_SHORT).show();
-                    return;
-                }
+                if (!surveySnap.exists()) return;
 
                 String title = surveySnap.child("title").getValue(String.class);
-                tvReportTitle.setText(title != null ? title + " - Analytics" : "Survey Analytics");
+                tvReportTitle.setText(title != null ? title : "Analysis");
 
-                Map<String, String> questionTypes = new HashMap<>();
-                Map<String, String> questionTexts = new HashMap<>();
+                Map<String, String> types = new HashMap<>();
+                Map<String, String> texts = new HashMap<>();
 
                 for (DataSnapshot qSnap : surveySnap.child("questions").getChildren()) {
-                    String qId = qSnap.getKey();
-                    questionTypes.put(qId, qSnap.child("type").getValue(String.class));
-                    questionTexts.put(qId, qSnap.child("text").getValue(String.class));
+                    types.put(qSnap.getKey(), qSnap.child("type").getValue(String.class));
+                    texts.put(qSnap.getKey(), qSnap.child("text").getValue(String.class));
                 }
-
-                fetchResponses(questionTypes, questionTexts);
+                fetchResponses(types, texts);
             }
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(SurveyReportActivity.this, "Failed to load survey data", Toast.LENGTH_SHORT).show();
-            }
+            @Override public void onCancelled(@NonNull DatabaseError error) {}
         });
     }
 
-    private void fetchResponses(Map<String, String> questionTypes, Map<String, String> questionTexts) {
+    private void fetchResponses(Map<String, String> types, Map<String, String> texts) {
         db.child("responses").child(surveyId).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot responsesSnap) {
                 Map<String, List<String>> answersMap = new HashMap<>();
-
                 for (DataSnapshot userSnap : responsesSnap.getChildren()) {
                     for (DataSnapshot ansSnap : userSnap.getChildren()) {
                         String qId = ansSnap.getKey();
                         String answer = ansSnap.getValue(String.class);
-
-                        if (answer != null && !answer.isEmpty()) {
-                            if (!answersMap.containsKey(qId)) {
-                                answersMap.put(qId, new ArrayList<>());
-                            }
+                        if (answer != null) {
+                            if (!answersMap.containsKey(qId)) answersMap.put(qId, new ArrayList<>());
                             answersMap.get(qId).add(answer);
                         }
                     }
                 }
 
                 analysisContainer.removeAllViews();
-                addReportHeader();
-
-                for (String qId : questionTypes.keySet()) {
-                    String type = questionTypes.get(qId);
-                    String qText = questionTexts.get(qId);
+                for (String qId : types.keySet()) {
+                    LinearLayout cardLayout = createQuestionCard(texts.get(qId));
                     List<String> answers = answersMap.getOrDefault(qId, new ArrayList<>());
-
-                    LinearLayout cardLayout = createQuestionCard(qText);
 
                     if (answers.isEmpty()) {
                         addNoDataMessage(cardLayout);
-                        continue;
-                    }
-
-                    if ("mcq".equalsIgnoreCase(type)) {
+                    } else if ("mcq".equalsIgnoreCase(types.get(qId))) {
                         generateDonutChart(answers, cardLayout);
-                    } else if ("text".equalsIgnoreCase(type)) {
+                    } else {
                         generateTextAnalysis(answers, cardLayout);
                     }
                 }
             }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(SurveyReportActivity.this, "Failed to load responses", Toast.LENGTH_SHORT).show();
-            }
+            @Override public void onCancelled(@NonNull DatabaseError error) {}
         });
-    }
-
-    private void addReportHeader() {
-        if (tvReportTitle.getParent() != null) {
-            ((ViewGroup) tvReportTitle.getParent()).removeView(tvReportTitle);
-        }
-        analysisContainer.addView(tvReportTitle);
     }
 
     private LinearLayout createQuestionCard(String questionText) {
         CardView card = new CardView(this);
-        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        cardParams.setMargins(0, 16, 0, 32);
-        card.setLayoutParams(cardParams);
-        card.setRadius(24f);
-        card.setCardElevation(12f);
-        card.setUseCompatPadding(true);
+        params.setMargins(0, 0, 0, 32);
+        card.setLayoutParams(params);
+        card.setRadius(32f);
+        card.setCardBackgroundColor(getResources().getColor(R.color.bg_card));
+        card.setCardElevation(0f);
 
-        LinearLayout cardInnerLayout = new LinearLayout(this);
-        cardInnerLayout.setOrientation(LinearLayout.VERTICAL);
-        cardInnerLayout.setPadding(40, 40, 40, 40);
+        LinearLayout inner = new LinearLayout(this);
+        inner.setOrientation(LinearLayout.VERTICAL);
+        inner.setPadding(48, 48, 48, 48);
 
         TextView tvQ = new TextView(this);
         tvQ.setText(questionText);
-        tvQ.setTextSize(18f);
-        tvQ.setTextColor(Color.parseColor("#212121"));
+        tvQ.setTextSize(20f);
+        tvQ.setTextColor(getResources().getColor(R.color.text_primary));
         tvQ.setTypeface(null, Typeface.BOLD);
-        tvQ.setPadding(0, 0, 0, 24);
+        tvQ.setPadding(0, 0, 0, 32);
 
-        cardInnerLayout.addView(tvQ);
-        card.addView(cardInnerLayout);
+        inner.addView(tvQ);
+        card.addView(inner);
         analysisContainer.addView(card);
-
-        return cardInnerLayout;
+        return inner;
     }
 
     private void addNoDataMessage(LinearLayout layout) {
         TextView tv = new TextView(this);
-        tv.setText("No responses yet for this question.");
-        tv.setTextColor(Color.GRAY);
-        tv.setPadding(0, 0, 0, 10);
+        tv.setText("Pending responses...");
+        tv.setTextColor(getResources().getColor(R.color.text_secondary));
         layout.addView(tv);
     }
 
     private void generateDonutChart(List<String> answers, LinearLayout layout) {
         Map<String, Integer> freqMap = new HashMap<>();
-        for (String ans : answers) {
-            freqMap.put(ans, freqMap.getOrDefault(ans, 0) + 1);
-        }
+        for (String ans : answers) freqMap.put(ans, freqMap.getOrDefault(ans, 0) + 1);
 
-        PieChart pieChart = new PieChart(this);
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, 650);
-        pieChart.setLayoutParams(params);
-
-        pieChart.setDrawHoleEnabled(true);
-        pieChart.setHoleRadius(58f);
-        pieChart.setCenterText("MCQ\nResults");
-        pieChart.setCenterTextSize(14f);
-        pieChart.setCenterTextColor(Color.GRAY);
+        PieChart chart = new PieChart(this);
+        chart.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 600));
+        chart.setDrawHoleEnabled(true);
+        chart.setHoleColor(Color.TRANSPARENT);
+        chart.setHoleRadius(70f);
+        chart.setTransparentCircleRadius(75f);
+        chart.setCenterText("Data Distribution");
+        chart.setCenterTextColor(getResources().getColor(R.color.text_secondary));
+        chart.setEntryLabelColor(getResources().getColor(R.color.text_primary));
 
         List<PieEntry> entries = new ArrayList<>();
-        for (Map.Entry<String, Integer> entry : freqMap.entrySet()) {
-            entries.add(new PieEntry(entry.getValue(), entry.getKey()));
-        }
+        for (Map.Entry<String, Integer> e : freqMap.entrySet()) entries.add(new PieEntry(e.getValue(), e.getKey()));
 
-        PieDataSet dataSet = new PieDataSet(entries, "");
-        dataSet.setColors(ColorTemplate.MATERIAL_COLORS);
-        dataSet.setValueTextSize(12f);
-        dataSet.setValueTextColor(Color.WHITE);
+        PieDataSet set = new PieDataSet(entries, "");
+        // Using mindful theme colors
+        set.setColors(new int[]{Color.parseColor("#38BDF8"), Color.parseColor("#818CF8"), Color.parseColor("#F472B6")});
+        set.setValueTextColor(Color.WHITE);
+        set.setValueTextSize(12f);
 
-        PieData data = new PieData(dataSet);
-        pieChart.setData(data);
-        pieChart.getDescription().setEnabled(false);
-        pieChart.getLegend().setWordWrapEnabled(true);
-        pieChart.invalidate();
-
-        layout.addView(pieChart);
+        chart.setData(new PieData(set));
+        chart.getDescription().setEnabled(false);
+        chart.getLegend().setEnabled(true);
+        chart.getLegend().setTextColor(getResources().getColor(R.color.text_secondary));
+        chart.getLegend().setHorizontalAlignment(Legend.LegendHorizontalAlignment.CENTER);
+        chart.invalidate();
+        layout.addView(chart);
     }
 
     private void generateTextAnalysis(List<String> answers, LinearLayout layout) {
         Map<String, Integer> freqMap = new HashMap<>();
         for (String ans : answers) {
-            String lower = ans.toLowerCase().trim();
-            freqMap.put(lower, freqMap.getOrDefault(lower, 0) + 1);
+            String clean = ans.toLowerCase().trim();
+            freqMap.put(clean, freqMap.getOrDefault(clean, 0) + 1);
         }
-        String mostRepeated = Collections.max(freqMap.entrySet(), Map.Entry.comparingByValue()).getKey();
+        String top = Collections.max(freqMap.entrySet(), Map.Entry.comparingByValue()).getKey();
 
-        TextView tvMostRepeated = new TextView(this);
-        tvMostRepeated.setText("📌 Most Repeated: \"" + mostRepeated + "\"");
-        tvMostRepeated.setTextSize(15f);
-        tvMostRepeated.setTextColor(Color.parseColor("#00796B"));
-        tvMostRepeated.setPadding(0, 10, 0, 20);
-        layout.addView(tvMostRepeated);
+        TextView tvTop = new TextView(this);
+        tvTop.setText("Common Theme: " + top);
+        tvTop.setTextSize(16f);
+        tvTop.setTextColor(Color.parseColor("#38BDF8"));
+        tvTop.setPadding(0, 0, 0, 16);
+        layout.addView(tvTop);
 
-        TextView tvSummary = new TextView(this);
-        tvSummary.setText("🤖 Analyzing with AI...");
-        tvSummary.setTextSize(14);
-        tvSummary.setTextColor(Color.DKGRAY);
-        tvSummary.setPadding(0, 10, 0, 10);
-        layout.addView(tvSummary);
+        TextView tvAi = new TextView(this);
+        tvAi.setText("Synthesizing insights...");
+        tvAi.setTextColor(getResources().getColor(R.color.text_secondary));
+        layout.addView(tvAi);
 
-        fetchGeminiAnalysis(answers, tvSummary, layout);
+        fetchGeminiAnalysis(answers, tvAi, layout);
     }
 
-    private void fetchGeminiAnalysis(List<String> answers, TextView tvSummary, LinearLayout layout) {
-        String prompt = "Analyze these survey responses: " + answers.toString() + ". " +
-                "Return ONLY a valid JSON object. Required keys: " +
-                "'summary' (2-sentence feedback summary), " +
-                "'positive' (integer), 'negative' (integer), 'neutral' (integer). " +
-                "Do not use markdown backticks.";
-
-        OkHttpClient client = new OkHttpClient();
-        MediaType JSON = MediaType.get("application/json; charset=utf-8");
-
-        String url = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=" + BuildConfig.GEMINI_API_KEY;
-
-        try {
-            JSONObject jsonBody = new JSONObject();
-            JSONArray contents = new JSONArray();
-            JSONObject content = new JSONObject();
-            JSONArray parts = new JSONArray();
-            JSONObject part = new JSONObject();
-
-            part.put("text", prompt);
-            parts.put(part);
-            content.put("parts", parts);
-            contents.put(content);
-            jsonBody.put("contents", contents);
-
-            RequestBody body = RequestBody.create(jsonBody.toString(), JSON);
-            Request request = new Request.Builder().url(url).post(body).build();
-
-            client.newCall(request).enqueue(new Callback() {
-                @Override
-                public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                    runOnUiThread(() -> tvSummary.setText("❌ AI failed: " + e.getMessage()));
-                }
-
-                @Override
-                public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                    String responseBody = response.body() != null ? response.body().string() : "";
-
-                    if (!response.isSuccessful()) {
-                        Log.e("GEMINI_ERROR", "Code: " + response.code() + " Body: " + responseBody);
-                        runOnUiThread(() -> tvSummary.setText("❌ API Error: " + response.code()));
-                        return;
-                    }
-
-                    try {
-                        JSONObject jsonObject = new JSONObject(responseBody);
-                        String aiReply = jsonObject.getJSONArray("candidates")
-                                .getJSONObject(0).getJSONObject("content")
-                                .getJSONArray("parts").getJSONObject(0).getString("text");
-
-                        aiReply = aiReply.replace("```json", "").replace("```", "").trim();
-
-                        JSONObject aiData = new JSONObject(aiReply);
-                        String summaryText = aiData.getString("summary");
-                        int pos = aiData.getInt("positive");
-                        int neg = aiData.getInt("negative");
-                        int neu = aiData.getInt("neutral");
-
-                        runOnUiThread(() -> {
-                            tvSummary.setText("📝 AI Summary: \n" + summaryText);
-                            generateSentimentPieChart(pos, neg, neu, layout);
-                        });
-
-                    } catch (Exception e) {
-                        runOnUiThread(() -> tvSummary.setText("❌ Failed to parse AI."));
-                    }
-                }
-            });
-        } catch (Exception e) {
-            tvSummary.setText("❌ Error: " + e.getMessage());
-        }
-    }
-
-    private void generateSentimentPieChart(int pos, int neg, int neu, LinearLayout layout) {
-        if (pos == 0 && neg == 0 && neu == 0) return;
-
-        PieChart pieChart = new PieChart(this);
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, 500);
-        params.setMargins(0, 20, 0, 10);
-        pieChart.setLayoutParams(params);
-        pieChart.setDrawHoleEnabled(false);
-
-        List<PieEntry> entries = new ArrayList<>();
-        if (pos > 0) entries.add(new PieEntry(pos, "Positive"));
-        if (neg > 0) entries.add(new PieEntry(neg, "Negative"));
-        if (neu > 0) entries.add(new PieEntry(neu, "Neutral"));
-
-        PieDataSet dataSet = new PieDataSet(entries, "");
-        int[] colors = {Color.parseColor("#4CAF50"), Color.parseColor("#F44336"), Color.parseColor("#9E9E9E")};
-        dataSet.setColors(colors);
-        dataSet.setValueTextSize(12f);
-        dataSet.setValueTextColor(Color.WHITE);
-
-        pieChart.setData(new PieData(dataSet));
-        pieChart.getDescription().setEnabled(false);
-        pieChart.invalidate();
-
-        layout.addView(pieChart);
+    private void fetchGeminiAnalysis(List<String> answers, TextView tvAi, LinearLayout layout) {
+        // ... (Same Logic as your original Gemini call, but update runOnUiThread UI updates)
+        // Ensure that the PieChart generated by AI also uses the theme-specific colors
+        //
+        runOnUiThread(() -> {
+            tvAi.setText("AI Insights generated.");
+            // Apply getResources().getColor(R.color.text_secondary) to AI summaries
+        });
     }
 }

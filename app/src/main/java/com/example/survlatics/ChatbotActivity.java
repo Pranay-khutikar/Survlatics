@@ -1,9 +1,13 @@
 package com.example.survlatics;
 
+import android.animation.ObjectAnimator;
+import android.animation.PropertyValuesHolder;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -33,12 +37,12 @@ public class ChatbotActivity extends AppCompatActivity {
     private RecyclerView rvMessages;
     private EditText etMessage;
     private Button btnSend;
+    private ImageView btnBack;
     private ChatAdapter adapter;
     private List<ChatMessage> messageList;
     private OkHttpClient client;
 
-    // We changed this from 'static final' so we can modify it based on the user's role!
-    private String dynamicSystemPrompt = "You are an AI assistant for an app called Survlatics. Your job is to help users understand how to use the app. Keep answers short and friendly. ";
+    private String dynamicSystemPrompt = "You are a friendly, calm, and mindful AI assistant for an app called Survlatics. Your job is to help users understand how to use the app. Keep answers short, encouraging, and easy to read. ";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,21 +52,29 @@ public class ChatbotActivity extends AppCompatActivity {
         rvMessages = findViewById(R.id.rvChatMessages);
         etMessage = findViewById(R.id.etChatMessage);
         btnSend = findViewById(R.id.btnSendChat);
+        btnBack = findViewById(R.id.btnBack);
 
         messageList = new ArrayList<>();
         client = new OkHttpClient();
 
-        // Setup RecyclerView
         rvMessages.setLayoutManager(new LinearLayoutManager(this));
         adapter = new ChatAdapter(messageList);
         rvMessages.setAdapter(adapter);
 
-        // Fetch the user's role from Firestore in the background
         fetchUserRole();
 
-        addMessage("Hello! I'm your Survlatics assistant. Need help?", true);
+        // Updated greeting to match the calmer vibe
+        addMessage("Hello. I'm your Survlatics guide. How can I help you find clarity today?", true);
+
+        // Back button logic with soft animation
+        btnBack.setOnClickListener(v -> {
+            animateClick(v);
+            finish();
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        });
 
         btnSend.setOnClickListener(v -> {
+            animateClick(v);
             String question = etMessage.getText().toString().trim();
             if (!question.isEmpty()) {
                 addMessage(question, false);
@@ -72,7 +84,22 @@ public class ChatbotActivity extends AppCompatActivity {
         });
     }
 
-    // 🌟 NEW METHOD: Fetch the role and update the AI's instructions
+    // Soft scale animation for interactions
+    private void animateClick(View view) {
+        PropertyValuesHolder scaleX = PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 0.90f, 1f);
+        PropertyValuesHolder scaleY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 0.90f, 1f);
+        ObjectAnimator animator = ObjectAnimator.ofPropertyValuesHolder(view, scaleX, scaleY);
+        animator.setDuration(200);
+        animator.start();
+    }
+
+    // Ensure system back button also fades smoothly
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+    }
+
     private void fetchUserRole() {
         String uid = FirebaseAuth.getInstance().getUid();
         if (uid == null) return;
@@ -82,11 +109,10 @@ public class ChatbotActivity extends AppCompatActivity {
                     if (document.exists() && document.getString("role") != null) {
                         String role = document.getString("role").toLowerCase();
 
-                        // Give the AI specific instructions based on who is currently logged in
                         if (role.equals("admin")) {
                             dynamicSystemPrompt += "The person you are talking to is an ADMIN. Admins CAN create new surveys. Feel free to explain how to create surveys if they ask.";
                         } else {
-                            dynamicSystemPrompt += "The person you are talking to is a STANDARD USER. Users CANNOT create surveys. If they ask how to create a survey, politely tell them only Admins can do that, and instruct them how to take an existing survey instead.";
+                            dynamicSystemPrompt += "The person you are talking to is a STANDARD USER. Users CANNOT create surveys. If they ask how to create a survey, politely tell them only Admins can do that, and gently instruct them how to take an existing survey instead.";
                         }
                     }
                 })
@@ -106,7 +132,7 @@ public class ChatbotActivity extends AppCompatActivity {
         String apiKey = rawKey.replace("\"", "").replace("\n", "").trim();
 
         if (apiKey.isEmpty()) {
-            addMessage("System Error: Gemini API Key is missing. Check local.properties.", true);
+            addMessage("System Error: Configuration missing. Please check your settings.", true);
             return;
         }
 
@@ -119,7 +145,6 @@ public class ChatbotActivity extends AppCompatActivity {
             JSONArray partsArray = new JSONArray();
             JSONObject textObject = new JSONObject();
 
-            // Append the dynamically generated prompt with the user's text
             String fullPrompt = dynamicSystemPrompt + "\n\nUser asked: " + userText;
             textObject.put("text", fullPrompt);
 
@@ -141,7 +166,7 @@ public class ChatbotActivity extends AppCompatActivity {
             client.newCall(request).enqueue(new Callback() {
                 @Override
                 public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                    addMessage("Network Error: Make sure your emulator/phone has Wi-Fi enabled.", true);
+                    addMessage("Network Error: Please check your connection and try again.", true);
                 }
 
                 @Override
@@ -159,23 +184,17 @@ public class ChatbotActivity extends AppCompatActivity {
 
                             addMessage(botReply, true);
                         } catch (Exception e) {
-                            addMessage("Error parsing AI response.", true);
+                            addMessage("I'm having trouble understanding that right now. Could you rephrase?", true);
                         }
                     } else {
                         Log.e("Chatbot", "API Error: " + responseBody);
-                        if (response.code() == 400) {
-                            addMessage("API Error 400: Your API key might be invalid.", true);
-                        } else if (response.code() == 404) {
-                            addMessage("API Error 404: Endpoint not found.", true);
-                        } else {
-                            addMessage("Server Error " + response.code() + ".", true);
-                        }
+                        addMessage("I encountered a server hiccup. Please try again in a moment.", true);
                     }
                 }
             });
 
         } catch (Exception e) {
-            addMessage("App Error: Failed to build the JSON request.", true);
+            addMessage("App Error: Something went wrong on my end.", true);
         }
     }
 }

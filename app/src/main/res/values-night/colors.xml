@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+    <resources>
+    <color name="bg_app">#0B1120</color>
+    <color name="bg_card">#1E293B</color>
+    <color name="bg_bottom_nav">#334155</color>
+    <color name="text_primary">#F8FAFC</color>
+    <color name="text_secondary">#94A3B8</color>
+    <color name="text_on_accent">#0F172A</color>
+    <color name="accent_primary">#38BDF8</color>
+    <color name="chart_active">#0EA5E9</color>
+    <color name="chart_inactive">#0F172A</color>
+</resources>

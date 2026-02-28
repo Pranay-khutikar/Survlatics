@@ -4,33 +4,60 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F5F5"
+    android:background="@color/bg_app"
+    android:animateLayoutChanges="true"
     tools:context=".AddSurveyActivity">
+
+    <LinearLayout
+        android:id="@+id/headerLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="48dp"
+        android:paddingBottom="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:padding="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_revert"
+            app:tint="@color/text_primary" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:fontFamily="sans-serif-medium"
+            android:text="Create Survey"
+            android:textColor="@color/text_primary"
+            android:textSize="24sp" />
+    </LinearLayout>
 
     <ScrollView
         android:id="@+id/scrollView"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:fillViewport="true"
-        app:layout_constraintBottom_toTopOf="@id/btnPublish"
+        android:clipToPadding="false"
+        android:paddingBottom="100dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toBottomOf="@id/headerLayout">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:text="Create New Survey"
-                android:textColor="#1E1E1E"
-                android:textSize="24sp"
-                android:textStyle="bold" />
+            android:paddingHorizontal="24dp"
+            android:paddingTop="16dp">
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/titleLayout"
@@ -38,48 +65,67 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="Survey Title"
-                app:boxCornerRadiusBottomEnd="12dp"
-                app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
-                app:boxCornerRadiusTopStart="12dp">
+                app:boxStrokeColor="@color/text_secondary"
+                app:hintTextColor="@color/text_secondary"
+                app:boxCornerRadiusBottomEnd="24dp"
+                app:boxCornerRadiusBottomStart="24dp"
+                app:boxCornerRadiusTopEnd="24dp"
+                app:boxCornerRadiusTopStart="24dp">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etSurveyTitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif"
+                    android:paddingHorizontal="16dp"
+                    android:textColor="@color/text_primary"
                     android:inputType="textCapSentences" />
             </com.google.android.material.textfield.TextInputLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="2dp"
+                android:layout_marginTop="32dp"
+                android:layout_marginBottom="16dp"
+                android:background="@color/bg_bottom_nav" />
 
             <LinearLayout
                 android:id="@+id/questionContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:animateLayoutChanges="true"
                 android:orientation="vertical" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnAddQuestion"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="match_parent"
-                android:layout_height="60dp"
+                android:layout_height="64dp"
                 android:layout_marginTop="16dp"
                 android:text="+ Add Question"
-                android:textSize="16sp" />
+                android:textColor="@color/accent_primary"
+                android:fontFamily="sans-serif-medium"
+                android:textSize="16sp"
+                app:strokeColor="@color/accent_primary"
+                app:cornerRadius="32dp" />
 
         </LinearLayout>
     </ScrollView>
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnPublish"
+        style="@style/Widget.Material3.Button.UnelevatedButton"
         android:layout_width="0dp"
         android:layout_height="64dp"
-        android:layout_margin="16dp"
-        android:backgroundTint="#4CAF50"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginBottom="24dp"
+        android:backgroundTint="@color/accent_primary"
         android:text="Publish Survey"
-        android:textColor="#FFFFFF"
+        android:textColor="@color/text_on_accent"
         android:textSize="18sp"
-        android:textStyle="bold"
-        app:cornerRadius="12dp"
+        android:fontFamily="sans-serif-medium"
+        app:cornerRadius="32dp"
+        app:elevation="4dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />

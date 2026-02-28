@@ -1,5 +1,10 @@
 package com.example.survlatics;
 
+import android.animation.ObjectAnimator;
+import android.animation.PropertyValuesHolder;
+import android.content.Intent;
+import android.content.res.ColorStateList;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -12,6 +17,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.res.ResourcesCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
@@ -33,7 +39,6 @@ public class TakeSurveyActivity extends AppCompatActivity {
     private DatabaseReference db;
     private String surveyId;
 
-    // To track generated views to extract answers later
     private List<View> answerViews = new ArrayList<>();
     private List<String> questionIds = new ArrayList<>();
 
@@ -53,7 +58,18 @@ public class TakeSurveyActivity extends AppCompatActivity {
             loadSurveyData();
         }
 
-        btnSubmitSurvey.setOnClickListener(v -> submitAnswers());
+        btnSubmitSurvey.setOnClickListener(v -> {
+            animateClick(v);
+            submitAnswers();
+        });
+    }
+
+    private void animateClick(View view) {
+        PropertyValuesHolder scaleX = PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 0.95f, 1f);
+        PropertyValuesHolder scaleY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 0.95f, 1f);
+        ObjectAnimator animator = ObjectAnimator.ofPropertyValuesHolder(view, scaleX, scaleY);
+        animator.setDuration(200);
+        animator.start();
     }
 
     private void loadSurveyData() {
@@ -66,37 +82,7 @@ public class TakeSurveyActivity extends AppCompatActivity {
 
                     DataSnapshot questionsSnap = snapshot.child("questions");
                     for (DataSnapshot qSnap : questionsSnap.getChildren()) {
-                        String qId = qSnap.getKey();
-                        String type = qSnap.child("type").getValue(String.class);
-                        String text = qSnap.child("text").getValue(String.class);
-
-                        questionIds.add(qId);
-
-                        // Render Question Text
-                        TextView tvQuestion = new TextView(TakeSurveyActivity.this);
-                        tvQuestion.setText(text);
-                        tvQuestion.setTextSize(18f);
-                        tvQuestion.setPadding(0, 20, 0, 10);
-                        questionsContainer.addView(tvQuestion);
-
-                        // Render Inputs
-                        if ("mcq".equals(type)) {
-                            RadioGroup radioGroup = new RadioGroup(TakeSurveyActivity.this);
-                            DataSnapshot optionsSnap = qSnap.child("options");
-                            for (DataSnapshot optSnap : optionsSnap.getChildren()) {
-                                String optText = optSnap.child("text").getValue(String.class);
-                                RadioButton rb = new RadioButton(TakeSurveyActivity.this);
-                                rb.setText(optText);
-                                radioGroup.addView(rb);
-                            }
-                            questionsContainer.addView(radioGroup);
-                            answerViews.add(radioGroup);
-                        } else {
-                            EditText editText = new EditText(TakeSurveyActivity.this);
-                            editText.setHint("Type your answer here");
-                            questionsContainer.addView(editText);
-                            answerViews.add(editText);
-                        }
+                        renderQuestion(qSnap);
                     }
                 }
             }
@@ -108,12 +94,65 @@ public class TakeSurveyActivity extends AppCompatActivity {
         });
     }
 
+    private void renderQuestion(DataSnapshot qSnap) {
+        String qId = qSnap.getKey();
+        String type = qSnap.child("type").getValue(String.class);
+        String text = qSnap.child("text").getValue(String.class);
+
+        questionIds.add(qId);
+
+        // 1. Stylized Question Title
+        TextView tvQuestion = new TextView(this);
+        tvQuestion.setText(text);
+        tvQuestion.setTextSize(18f);
+        tvQuestion.setTextColor(getResources().getColor(R.color.text_primary));
+        tvQuestion.setTypeface(null, Typeface.BOLD);
+        tvQuestion.setPadding(0, 40, 0, 16);
+        questionsContainer.addView(tvQuestion);
+
+        // 2. Themed Inputs
+        if ("mcq".equals(type)) {
+            RadioGroup radioGroup = new RadioGroup(this);
+            radioGroup.setPadding(0, 10, 0, 20);
+
+            DataSnapshot optionsSnap = qSnap.child("options");
+            for (DataSnapshot optSnap : optionsSnap.getChildren()) {
+                String optText = optSnap.child("text").getValue(String.class);
+
+                RadioButton rb = new RadioButton(this);
+                rb.setText(optText);
+                rb.setTextColor(getResources().getColor(R.color.text_secondary));
+                rb.setTextSize(16f);
+                rb.setPadding(16, 16, 16, 16);
+
+                // Set the dot color to match the glowing accent
+                rb.setButtonTintList(ColorStateList.valueOf(getResources().getColor(R.color.accent_primary)));
+
+                radioGroup.addView(rb);
+            }
+            questionsContainer.addView(radioGroup);
+            answerViews.add(radioGroup);
+        } else {
+            EditText editText = new EditText(this);
+            editText.setHint("Tap to type your answer...");
+            editText.setHintTextColor(getResources().getColor(R.color.text_secondary));
+            editText.setTextColor(getResources().getColor(R.color.text_primary));
+            editText.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.bg_chat_bot, getTheme()));
+            editText.setPadding(40, 32, 40, 32);
+
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            params.setMargins(0, 16, 0, 16);
+            editText.setLayoutParams(params);
+
+            questionsContainer.addView(editText);
+            answerViews.add(editText);
+        }
+    }
+
     private void submitAnswers() {
         String userId = FirebaseAuth.getInstance().getUid();
-        if (userId == null) {
-            Toast.makeText(this, "You must be logged in", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        if (userId == null) return;
 
         Map<String, Object> responses = new HashMap<>();
 
@@ -126,7 +165,7 @@ public class TakeSurveyActivity extends AppCompatActivity {
                 RadioGroup rg = (RadioGroup) view;
                 int selectedId = rg.getCheckedRadioButtonId();
                 if (selectedId != -1) {
-                    RadioButton rb = findViewById(selectedId);
+                    RadioButton rb = rg.findViewById(selectedId);
                     answerText = rb.getText().toString();
                 }
             } else if (view instanceof EditText) {
@@ -136,12 +175,11 @@ public class TakeSurveyActivity extends AppCompatActivity {
             responses.put(qId, answerText);
         }
 
-        // Save to Database under responses -> surveyId -> userId
         db.child("responses").child(surveyId).child(userId).setValue(responses)
                 .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(TakeSurveyActivity.this, "Survey Submitted!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Response Recorded", Toast.LENGTH_SHORT).show();
                     finish();
-                })
-                .addOnFailureListener(e -> Toast.makeText(TakeSurveyActivity.this, "Failed to submit", Toast.LENGTH_SHORT).show());
+                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                });
     }
 }

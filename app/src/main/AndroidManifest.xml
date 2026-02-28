@@ -15,11 +15,13 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Survlatics"
         android:usesCleartextTraffic="true"
+        android:enableOnBackInvokedCallback="true"
         tools:targetApi="31">
 
         <activity
             android:name=".splashscreen"
-            android:exported="true">
+            android:exported="true"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -28,29 +30,62 @@
 
         <activity
             android:name=".MainActivity"
-            android:exported="true" />
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".HomeActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".TakeSurveyActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".CompleteActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
         <activity
             android:name=".AccountActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
         <activity
             android:name=".AdminActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".AddSurveyActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".AdminSurveyListActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".SurveyReportActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
         <activity
             android:name=".Accountadmin"
-            android:exported="false" />
-        <activity android:name=".AddSurveyActivity" />
-        <activity android:name=".TakeSurveyActivity" android:exported="false" />
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
 
-        <activity android:name=".CompleteActivity" android:exported="false" />
-        <activity android:name=".AdminSurveyListActivity" android:exported="false" />
-        <activity android:name=".SurveyReportActivity" android:exported="false" />
         <activity
             android:name=".ChatbotActivity"
             android:exported="false"
+            android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
 
         <meta-data

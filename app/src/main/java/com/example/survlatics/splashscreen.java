@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
+import android.view.animation.OvershootInterpolator;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -18,32 +19,51 @@ public class splashscreen extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.splashscreen);
 
-        // Animate logo scale-in (1 second)
+        // 1. Logo "Pop" animation using Overshoot
         ImageView logo = findViewById(R.id.imageView_logo);
-        logo.animate().scaleX(1f).scaleY(1f).setDuration(1000);
+        logo.animate()
+                .scaleX(1f)
+                .scaleY(1f)
+                .setInterpolator(new OvershootInterpolator())
+                .setDuration(1000)
+                .start();
 
-        // Animate title fade-up (start after 400ms)
+        // 2. Title fade and gentle slide up
         TextView title = findViewById(R.id.textView_title);
-        title.setAlpha(0f);
-        title.animate().alpha(1f).translationYBy(-20f).setStartDelay(400).setDuration(600);
+        title.setTranslationY(30f);
+        title.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setStartDelay(500)
+                .setDuration(800)
+                .start();
 
-        // Animate subtitle fade (start after 700ms)
+        // 3. Subtitle fade in
         TextView subtitle = findViewById(R.id.textView_subtitle);
-        subtitle.setAlpha(0f);
-        subtitle.animate().alpha(1f).setStartDelay(700).setDuration(600);
+        subtitle.animate()
+                .alpha(1f)
+                .setStartDelay(900)
+                .setDuration(700)
+                .start();
 
-        // Optional: Show progress bar fade-in
+        // 4. Progress bar soft appearance
         ProgressBar progress = findViewById(R.id.progressBar);
         if (progress != null) {
-            progress.setAlpha(0f);
-            progress.setVisibility(View.VISIBLE);
-            progress.animate().alpha(1f).setStartDelay(1200).setDuration(400);
+            progress.animate()
+                    .alpha(1f)
+                    .setStartDelay(1400)
+                    .setDuration(500)
+                    .start();
         }
 
-        // Navigate after 3 seconds (your original timing)
+        // 5. Navigate with a smooth fade transition
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             Intent intent = new Intent(splashscreen.this, MainActivity.class);
             startActivity(intent);
+
+            // This is the key to that premium "smooth glide" feel
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+
             finish();
         }, 3000);
     }

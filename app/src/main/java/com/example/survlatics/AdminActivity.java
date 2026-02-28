@@ -1,5 +1,7 @@
 package com.example.survlatics;
 
+import android.animation.ObjectAnimator;
+import android.animation.PropertyValuesHolder;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Color;
@@ -35,26 +37,21 @@ public class AdminActivity extends AppCompatActivity {
         // --- 2. The Bulletproof WebView Setup ---
         if (splineWebView != null) {
             WebSettings webSettings = splineWebView.getSettings();
-            webSettings.setJavaScriptEnabled(true); // Required for 3D rendering
+            webSettings.setJavaScriptEnabled(true);
             webSettings.setDomStorageEnabled(true);
 
-            // Make it look native: Transparent background & hide scrollbars
             splineWebView.setBackgroundColor(Color.TRANSPARENT);
             splineWebView.setVerticalScrollBarEnabled(false);
             splineWebView.setHorizontalScrollBarEnabled(false);
 
-            // Keep the loading inside the app, not opening Chrome
             splineWebView.setWebViewClient(new WebViewClient());
 
-            // --- Prevent Android from stealing the one-finger swipe ---
             splineWebView.setOnTouchListener((v, event) -> {
-                // This tells the parent layout "Do not scroll the screen, let me spin the 3D model!"
                 v.getParent().requestDisallowInterceptTouchEvent(true);
                 return false;
             });
 
-            // Use your public Spline Viewer link here!
-            splineWebView.loadUrl("https://my.spline.design/devicecloudcopycopy-nO0H3D4CgGvXGUWJpCRAm9pw/");
+            splineWebView.loadUrl("https://my.spline.design/devicecloudcopycopycopy-EFopqvvPBSm3Wu0SrOLmXZ0y/");
         }
 
         // --- 3. Set Home as selected icon ---
@@ -77,14 +74,26 @@ public class AdminActivity extends AppCompatActivity {
 
         // --- 5. Add Survey Action ---
         btnAddSurvey.setOnClickListener(v -> {
-            startActivity(new Intent(this, AddSurveyActivity.class));
+            animateClick(v);
+            Intent intent = new Intent(this, AddSurveyActivity.class);
+            startActivity(intent);
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         });
+    }
+
+    // --- Soft Scale Animation for Interactions ---
+    private void animateClick(View view) {
+        PropertyValuesHolder scaleX = PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 0.95f, 1f);
+        PropertyValuesHolder scaleY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 0.95f, 1f);
+        ObjectAnimator animator = ObjectAnimator.ofPropertyValuesHolder(view, scaleX, scaleY);
+        animator.setDuration(200);
+        animator.start();
     }
 
     private void navigateTo(Class<?> targetActivity) {
         Intent intent = new Intent(this, targetActivity);
         startActivity(intent);
-        overridePendingTransition(0, 0);
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
     }
 
     @Override

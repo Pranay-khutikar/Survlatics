@@ -1,5 +1,7 @@
 package com.example.survlatics;
 
+import android.animation.ObjectAnimator;
+import android.animation.PropertyValuesHolder;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -7,6 +9,7 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
@@ -22,6 +25,7 @@ public class AddSurveyActivity extends AppCompatActivity {
     private EditText etSurveyTitle;
     private LinearLayout questionContainer;
     private DatabaseReference db;
+    private ImageView btnBack;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,13 +34,47 @@ public class AddSurveyActivity extends AppCompatActivity {
 
         etSurveyTitle = findViewById(R.id.etSurveyTitle);
         questionContainer = findViewById(R.id.questionContainer);
+        btnBack = findViewById(R.id.btnBack);
         db = FirebaseDatabase.getInstance().getReference();
 
-        findViewById(R.id.btnAddQuestion).setOnClickListener(v -> addQuestion());
-        findViewById(R.id.btnPublish).setOnClickListener(v -> publishSurvey());
+        // Back button logic with soft animation
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> {
+                animateClick(v);
+                finish();
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            });
+        }
+
+        findViewById(R.id.btnAddQuestion).setOnClickListener(v -> {
+            animateClick(v);
+            addQuestion();
+        });
+
+        findViewById(R.id.btnPublish).setOnClickListener(v -> {
+            animateClick(v);
+            publishSurvey();
+        });
+    }
+
+    // --- Soft scale animation for interactions ---
+    private void animateClick(View view) {
+        PropertyValuesHolder scaleX = PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 0.95f, 1f);
+        PropertyValuesHolder scaleY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 0.95f, 1f);
+        ObjectAnimator animator = ObjectAnimator.ofPropertyValuesHolder(view, scaleX, scaleY);
+        animator.setDuration(200);
+        animator.start();
+    }
+
+    // Ensure system back button also fades smoothly
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
     }
 
     private void addQuestion() {
+        // Because of animateLayoutChanges="true" in the XML, this view will smoothly expand inward
         View qView = getLayoutInflater().inflate(R.layout.item_question, questionContainer, false);
 
         AutoCompleteTextView typeSpinner = qView.findViewById(R.id.spinnerType);
@@ -48,7 +86,6 @@ public class AddSurveyActivity extends AppCompatActivity {
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, types);
         typeSpinner.setAdapter(adapter);
 
-        // Improved Click Listener for the Dropdown
         typeSpinner.setOnItemClickListener((parent, view, position, id) -> {
             String selected = parent.getItemAtPosition(position).toString();
             boolean isMcq = "mcq".equalsIgnoreCase(selected);
@@ -60,18 +97,23 @@ public class AddSurveyActivity extends AppCompatActivity {
         });
 
         btnAddOption.setOnClickListener(v -> {
+            animateClick(v);
             View optView = getLayoutInflater().inflate(R.layout.item_option, optionsContainer, false);
             optionsContainer.addView(optView);
         });
 
-        btnRemoveQuestion.setOnClickListener(v -> questionContainer.removeView(qView));
+        btnRemoveQuestion.setOnClickListener(v -> {
+            animateClick(v);
+            questionContainer.removeView(qView);
+        });
+
         questionContainer.addView(qView);
     }
 
     private void publishSurvey() {
         String title = etSurveyTitle.getText().toString().trim();
         if (title.isEmpty() || questionContainer.getChildCount() == 0) {
-            Toast.makeText(this, "Complete the survey details", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Please add a title and at least one question.", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -104,7 +146,7 @@ public class AddSurveyActivity extends AppCompatActivity {
 
                     Map<String, Object> optData = new HashMap<>();
                     optData.put("text", etO.getText().toString());
-                    optData.put("isCorrect", cbCorrect.isChecked()); // Saves if this is the right answer
+                    optData.put("isCorrect", cbCorrect.isChecked());
 
                     opts.put("option_" + (j + 1), optData);
                 }
@@ -116,8 +158,9 @@ public class AddSurveyActivity extends AppCompatActivity {
         survey.put("questions", questions);
         db.child("surveys").child(surveyId).setValue(survey)
                 .addOnSuccessListener(v -> {
-                    Toast.makeText(this, "Published!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Survey published successfully!", Toast.LENGTH_SHORT).show();
                     finish();
+                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                 });
     }
 }

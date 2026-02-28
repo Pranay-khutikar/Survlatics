@@ -1,5 +1,7 @@
 package com.example.survlatics;
 
+import android.animation.ObjectAnimator;
+import android.animation.PropertyValuesHolder;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Color;
@@ -38,32 +40,30 @@ public class HomeActivity extends AppCompatActivity {
     private SurveyAdapter adapter;
     private DatabaseReference db;
 
-    // Empty State Views
     private WebView splineWebViewEmpty;
-    private View layoutEmptyState; // The container for both 3D and Text
+    private View layoutEmptyState;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.home);
 
-        // --- 1. Initialize Standard Views ---
         listView = findViewById(R.id.completedListView);
         shimmerFrameLayout = findViewById(R.id.shimmer_view_container);
         FloatingActionButton fabChatbot = findViewById(R.id.fabChatbot);
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigationView);
 
-        // --- 2. Initialize Empty State Views ---
         splineWebViewEmpty = findViewById(R.id.spline_webview_empty);
-        layoutEmptyState = findViewById(R.id.layout_empty_state); // Matches the new XML ID
+        layoutEmptyState = findViewById(R.id.layout_empty_state);
         setupEmptyState3D();
 
-        // --- 3. Chatbot setup ---
         fabChatbot.setOnClickListener(v -> {
-            startActivity(new Intent(HomeActivity.this, ChatbotActivity.class));
+            animateClick(v);
+            Intent intent = new Intent(HomeActivity.this, ChatbotActivity.class);
+            startActivity(intent);
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         });
 
-        // --- 4. Recycler View setup ---
         listView.setLayoutManager(new LinearLayoutManager(this));
         surveyTitles = new ArrayList<>();
         surveyIds = new ArrayList<>();
@@ -72,12 +72,12 @@ public class HomeActivity extends AppCompatActivity {
             Intent intent = new Intent(HomeActivity.this, TakeSurveyActivity.class);
             intent.putExtra("SURVEY_ID", surveyId);
             startActivity(intent);
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         });
 
         listView.setAdapter(adapter);
         db = FirebaseDatabase.getInstance().getReference();
 
-        // --- 5. Bottom Navigation setup ---
         bottomNavigationView.setSelectedItemId(R.id.nav_home);
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
@@ -85,15 +85,24 @@ public class HomeActivity extends AppCompatActivity {
                 return true;
             } else if (id == R.id.nav_surveys) {
                 startActivity(new Intent(this, CompleteActivity.class));
-                overridePendingTransition(0, 0);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                 return true;
             } else if (id == R.id.nav_account) {
                 startActivity(new Intent(this, AccountActivity.class));
-                overridePendingTransition(0, 0);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                 return true;
             }
             return false;
         });
+    }
+
+    // Soft scale animation for interactions
+    private void animateClick(View view) {
+        PropertyValuesHolder scaleX = PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 0.90f, 1f);
+        PropertyValuesHolder scaleY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 0.90f, 1f);
+        ObjectAnimator animator = ObjectAnimator.ofPropertyValuesHolder(view, scaleX, scaleY);
+        animator.setDuration(200);
+        animator.start();
     }
 
     @SuppressLint({"SetJavaScriptEnabled", "ClickableViewAccessibility"})
@@ -110,14 +119,12 @@ public class HomeActivity extends AppCompatActivity {
             splineWebViewEmpty.setHorizontalScrollBarEnabled(false);
             splineWebViewEmpty.setWebViewClient(new WebViewClient());
 
-            // Prevent scroll stealing for smoother 3D interaction
             splineWebViewEmpty.setOnTouchListener((v, event) -> {
                 v.getParent().requestDisallowInterceptTouchEvent(true);
                 return false;
             });
 
-            // The specific "Empty Room" model link
-            splineWebViewEmpty.loadUrl("https://my.spline.design/roomrelaxingcopycopycopy-vgdkKvtoZ7eR0cWdBYX35U2f/");
+            splineWebViewEmpty.loadUrl("https://my.spline.design/devicecloudcopycopycopy-EFopqvvPBSm3Wu0SrOLmXZ0y/");
         }
     }
 
@@ -131,7 +138,6 @@ public class HomeActivity extends AppCompatActivity {
         String userId = FirebaseAuth.getInstance().getUid();
         if (userId == null) return;
 
-        // Reset UI: Start Shimmer and hide both Data list and Empty state
         shimmerFrameLayout.startShimmer();
         shimmerFrameLayout.setVisibility(View.VISIBLE);
         listView.setVisibility(View.GONE);
@@ -212,7 +218,6 @@ public class HomeActivity extends AppCompatActivity {
         shimmerFrameLayout.setVisibility(View.GONE);
         listView.setVisibility(View.GONE);
 
-        // Show the 3D model and the "No Survey" text container
         if (layoutEmptyState != null) layoutEmptyState.setVisibility(View.VISIBLE);
 
         surveyTitles.clear();
@@ -224,7 +229,6 @@ public class HomeActivity extends AppCompatActivity {
         shimmerFrameLayout.stopShimmer();
         shimmerFrameLayout.setVisibility(View.GONE);
 
-        // Hide the empty state and show the list
         if (layoutEmptyState != null) layoutEmptyState.setVisibility(View.GONE);
         listView.setVisibility(View.VISIBLE);
 
