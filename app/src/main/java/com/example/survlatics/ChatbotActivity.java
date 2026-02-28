@@ -4,12 +4,14 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -31,12 +33,12 @@ public class ChatbotActivity extends AppCompatActivity {
     private RecyclerView rvMessages;
     private EditText etMessage;
     private Button btnSend;
-    // Assume you created a ChatAdapter
-    // private ChatAdapter adapter;
+    private ChatAdapter adapter;
     private List<ChatMessage> messageList;
     private OkHttpClient client;
 
-    private static final String SYSTEM_PROMPT = "You are an AI assistant for an app called Survlatics. Your job is to help users understand how to use the app. Keep answers short and friendly. To take a survey, users must go to the Home screen, find a pending survey, and click it to answer questions. To view completed surveys, they should use the bottom navigation menu.";
+    // We changed this from 'static final' so we can modify it based on the user's role!
+    private String dynamicSystemPrompt = "You are an AI assistant for an app called Survlatics. Your job is to help users understand how to use the app. Keep answers short and friendly. ";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,11 +54,13 @@ public class ChatbotActivity extends AppCompatActivity {
 
         // Setup RecyclerView
         rvMessages.setLayoutManager(new LinearLayoutManager(this));
-        // adapter = new ChatAdapter(messageList);
-        // rvMessages.setAdapter(adapter);
+        adapter = new ChatAdapter(messageList);
+        rvMessages.setAdapter(adapter);
 
-        // Add a welcome message
-        addMessage("Hello! I'm your Survlatics assistant. Need help taking a survey?", true);
+        // Fetch the user's role from Firestore in the background
+        fetchUserRole();
+
+        addMessage("Hello! I'm your Survlatics assistant. Need help?", true);
 
         btnSend.setOnClickListener(v -> {
             String question = etMessage.getText().toString().trim();
@@ -68,28 +72,55 @@ public class ChatbotActivity extends AppCompatActivity {
         });
     }
 
+    // 🌟 NEW METHOD: Fetch the role and update the AI's instructions
+    private void fetchUserRole() {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null) return;
+
+        FirebaseFirestore.getInstance().collection("Users").document(uid).get()
+                .addOnSuccessListener(document -> {
+                    if (document.exists() && document.getString("role") != null) {
+                        String role = document.getString("role").toLowerCase();
+
+                        // Give the AI specific instructions based on who is currently logged in
+                        if (role.equals("admin")) {
+                            dynamicSystemPrompt += "The person you are talking to is an ADMIN. Admins CAN create new surveys. Feel free to explain how to create surveys if they ask.";
+                        } else {
+                            dynamicSystemPrompt += "The person you are talking to is a STANDARD USER. Users CANNOT create surveys. If they ask how to create a survey, politely tell them only Admins can do that, and instruct them how to take an existing survey instead.";
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> Log.e("Chatbot", "Failed to fetch user role", e));
+    }
+
     private void addMessage(String message, boolean isBot) {
         runOnUiThread(() -> {
             messageList.add(new ChatMessage(message, isBot));
-            // adapter.notifyItemInserted(messageList.size() - 1);
+            adapter.notifyItemInserted(messageList.size() - 1);
             rvMessages.scrollToPosition(messageList.size() - 1);
         });
     }
 
     private void callGeminiAPI(String userText) {
-        String apiKey = BuildConfig.GEMINI_API_KEY;
-        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey;
+        String rawKey = BuildConfig.GEMINI_API_KEY;
+        String apiKey = rawKey.replace("\"", "").replace("\n", "").trim();
+
+        if (apiKey.isEmpty()) {
+            addMessage("System Error: Gemini API Key is missing. Check local.properties.", true);
+            return;
+        }
+
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + apiKey;
 
         try {
-            // Build the JSON payload for Gemini
             JSONObject jsonBody = new JSONObject();
             JSONArray contentsArray = new JSONArray();
             JSONObject partsObject = new JSONObject();
             JSONArray partsArray = new JSONArray();
             JSONObject textObject = new JSONObject();
 
-            // Prepend the system instructions so the bot knows its role
-            String fullPrompt = SYSTEM_PROMPT + "\n\nUser asked: " + userText;
+            // Append the dynamically generated prompt with the user's text
+            String fullPrompt = dynamicSystemPrompt + "\n\nUser asked: " + userText;
             textObject.put("text", fullPrompt);
 
             partsArray.put(textObject);
@@ -110,17 +141,16 @@ public class ChatbotActivity extends AppCompatActivity {
             client.newCall(request).enqueue(new Callback() {
                 @Override
                 public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                    addMessage("Sorry, I'm having trouble connecting to the server.", true);
+                    addMessage("Network Error: Make sure your emulator/phone has Wi-Fi enabled.", true);
                 }
 
                 @Override
                 public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                    if (response.isSuccessful() && response.body() != null) {
-                        try {
-                            String responseBody = response.body().string();
-                            JSONObject jsonObject = new JSONObject(responseBody);
+                    String responseBody = response.body() != null ? response.body().string() : "";
 
-                            // Parse Gemini's response structure
+                    if (response.isSuccessful()) {
+                        try {
+                            JSONObject jsonObject = new JSONObject(responseBody);
                             JSONArray candidates = jsonObject.getJSONArray("candidates");
                             JSONObject firstCandidate = candidates.getJSONObject(0);
                             JSONObject content = firstCandidate.getJSONObject("content");
@@ -128,19 +158,24 @@ public class ChatbotActivity extends AppCompatActivity {
                             String botReply = parts.getJSONObject(0).getString("text");
 
                             addMessage(botReply, true);
-
                         } catch (Exception e) {
-                            Log.e("Chatbot", "JSON Parsing error", e);
-                            addMessage("I didn't understand the response from the server.", true);
+                            addMessage("Error parsing AI response.", true);
                         }
                     } else {
-                        addMessage("Error: " + response.code(), true);
+                        Log.e("Chatbot", "API Error: " + responseBody);
+                        if (response.code() == 400) {
+                            addMessage("API Error 400: Your API key might be invalid.", true);
+                        } else if (response.code() == 404) {
+                            addMessage("API Error 404: Endpoint not found.", true);
+                        } else {
+                            addMessage("Server Error " + response.code() + ".", true);
+                        }
                     }
                 }
             });
 
         } catch (Exception e) {
-            e.printStackTrace();
+            addMessage("App Error: Failed to build the JSON request.", true);
         }
     }
 }

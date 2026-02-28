@@ -9,10 +9,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.example.survlatics" />
+                  <option name="mobileSdkAppId" value="1:155893550562:android:9d3dace4c725a4f81d7dbb" />
+                  <option name="projectId" value="survlatics" />
+                  <option name="projectNumber" value="155893550562" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />
