@@ -26,12 +26,11 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // 2. Inject API keys INTO BuildConfig (Corrected Logic)
-        // We read from localProperties AFTER the .load() command above
+        // 2. Inject API keys INTO BuildConfig
         val openAiKey = localProperties.getProperty("OPENAI_API_KEY") ?: ""
         buildConfigField("String", "OPENAI_API_KEY", "\"$openAiKey\"")
 
-        val geminiKey = localProperties.getProperty("GEMINI_API_KEY") ?: ""
+        val geminiKey = localProperties.getProperty("GEMINI_API_KEY") ?: "AIzaSyBSccLI7QQkoISOZwpL4ofrVn4C1iEKClA"
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
     }
 
@@ -62,14 +61,24 @@ dependencies {
     implementation(libs.activity)
     implementation(libs.constraintlayout)
     implementation(libs.recyclerview)
-    implementation("com.github.bumptech.glide:glide:4.16.0")
-    annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
+// WRONG (My mistake!)
     // Explicit UI versions
+    // CORRECT
+    implementation("design.spline:spline-runtime:+")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
+
+    // Glide
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
+
+    // Shimmer
     implementation("com.facebook.shimmer:shimmer:0.5.0")
+
+    // --- Spline 3D Runtime ---
+
     // Firebase (Using BOM for version management)
     implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
     implementation("com.google.firebase:firebase-auth")
@@ -79,7 +88,7 @@ dependencies {
     // Charts Library
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 
-    // Networking for API calls (Removed duplicate)
+    // Networking for API calls
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
     // Testing
