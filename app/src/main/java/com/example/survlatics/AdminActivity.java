@@ -51,7 +51,7 @@ public class AdminActivity extends AppCompatActivity {
                 return false;
             });
 
-            splineWebView.loadUrl("https://my.spline.design/devicecloudcopycopycopy-EFopqvvPBSm3Wu0SrOLmXZ0y/");
+            splineWebView.loadUrl("https://my.spline.design/roomrelaxingcopy-qsR1dRL95R7eL4d2FMDYnImg/");
         }
 
         // --- 3. Set Home as selected icon ---

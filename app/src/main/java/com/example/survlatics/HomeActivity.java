@@ -150,8 +150,15 @@ public class HomeActivity extends AppCompatActivity {
                 List<String> tempIds = new ArrayList<>();
 
                 int totalActive = 0;
+                long currentTime = System.currentTimeMillis();
+
                 for (DataSnapshot data : snapshot.getChildren()) {
-                    if (Boolean.TRUE.equals(data.child("active").getValue(Boolean.class))) {
+                    Boolean active = data.child("active").getValue(Boolean.class);
+                    Long expiryDate = data.child("expiryDate").getValue(Long.class);
+
+                    boolean isExpired = (expiryDate != null && expiryDate > 0 && currentTime > expiryDate);
+
+                    if (Boolean.TRUE.equals(active) && !isExpired) {
                         totalActive++;
                     }
                 }
@@ -166,7 +173,11 @@ public class HomeActivity extends AppCompatActivity {
 
                 for (DataSnapshot data : snapshot.getChildren()) {
                     Boolean active = data.child("active").getValue(Boolean.class);
-                    if (Boolean.TRUE.equals(active)) {
+                    Long expiryDate = data.child("expiryDate").getValue(Long.class);
+
+                    boolean isExpired = (expiryDate != null && expiryDate > 0 && currentTime > expiryDate);
+
+                    if (Boolean.TRUE.equals(active) && !isExpired) {
                         String surveyId = data.getKey();
                         String title = data.child("title").getValue(String.class);
 

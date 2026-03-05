@@ -2,6 +2,7 @@ package com.example.survlatics;
 
 import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
+import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -17,6 +18,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,6 +30,9 @@ public class AddSurveyActivity extends AppCompatActivity {
     private DatabaseReference db;
     private ImageView btnBack;
 
+    private Button btnPickExpiryDate;
+    private long expiryTimestamp = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -35,6 +41,7 @@ public class AddSurveyActivity extends AppCompatActivity {
         etSurveyTitle = findViewById(R.id.etSurveyTitle);
         questionContainer = findViewById(R.id.questionContainer);
         btnBack = findViewById(R.id.btnBack);
+        btnPickExpiryDate = findViewById(R.id.btnPickExpiryDate);
         db = FirebaseDatabase.getInstance().getReference();
 
         // Back button logic with soft animation
@@ -45,6 +52,11 @@ public class AddSurveyActivity extends AppCompatActivity {
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
             });
         }
+
+        btnPickExpiryDate.setOnClickListener(v -> {
+            animateClick(v);
+            showDatePicker();
+        });
 
         findViewById(R.id.btnAddQuestion).setOnClickListener(v -> {
             animateClick(v);
@@ -73,8 +85,22 @@ public class AddSurveyActivity extends AppCompatActivity {
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
     }
 
+    private void showDatePicker() {
+        Calendar calendar = Calendar.getInstance();
+        DatePickerDialog dialog = new DatePickerDialog(this, (view, year, month, dayOfMonth) -> {
+            Calendar selectedDate = Calendar.getInstance();
+            selectedDate.set(year, month, dayOfMonth, 23, 59, 59);
+
+            expiryTimestamp = selectedDate.getTimeInMillis();
+            btnPickExpiryDate.setText("Expires on: " + dayOfMonth + "/" + (month + 1) + "/" + year);
+
+        }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH));
+
+        dialog.getDatePicker().setMinDate(System.currentTimeMillis() - 1000);
+        dialog.show();
+    }
+
     private void addQuestion() {
-        // Because of animateLayoutChanges="true" in the XML, this view will smoothly expand inward
         View qView = getLayoutInflater().inflate(R.layout.item_question, questionContainer, false);
 
         AutoCompleteTextView typeSpinner = qView.findViewById(R.id.spinnerType);
@@ -124,6 +150,7 @@ public class AddSurveyActivity extends AppCompatActivity {
         survey.put("title", title);
         survey.put("active", true);
         survey.put("createdBy", FirebaseAuth.getInstance().getUid());
+        survey.put("expiryDate", expiryTimestamp);
 
         Map<String, Object> questions = new HashMap<>();
 

@@ -57,16 +57,18 @@ public class ChatbotActivity extends AppCompatActivity {
         messageList = new ArrayList<>();
         client = new OkHttpClient();
 
-        rvMessages.setLayoutManager(new LinearLayoutManager(this));
+        // UPDATED: Added stackFromEnd so messages push up when keyboard opens
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        layoutManager.setStackFromEnd(true);
+        rvMessages.setLayoutManager(layoutManager);
+
         adapter = new ChatAdapter(messageList);
         rvMessages.setAdapter(adapter);
 
         fetchUserRole();
 
-        // Updated greeting to match the calmer vibe
         addMessage("Hello. I'm your Survlatics guide. How can I help you find clarity today?", true);
 
-        // Back button logic with soft animation
         btnBack.setOnClickListener(v -> {
             animateClick(v);
             finish();
@@ -84,7 +86,6 @@ public class ChatbotActivity extends AppCompatActivity {
         });
     }
 
-    // Soft scale animation for interactions
     private void animateClick(View view) {
         PropertyValuesHolder scaleX = PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 0.90f, 1f);
         PropertyValuesHolder scaleY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 0.90f, 1f);
@@ -93,7 +94,6 @@ public class ChatbotActivity extends AppCompatActivity {
         animator.start();
     }
 
-    // Ensure system back button also fades smoothly
     @Override
     public void onBackPressed() {
         super.onBackPressed();
@@ -176,19 +176,20 @@ public class ChatbotActivity extends AppCompatActivity {
                     if (response.isSuccessful()) {
                         try {
                             JSONObject jsonObject = new JSONObject(responseBody);
-                            JSONArray candidates = jsonObject.getJSONArray("candidates");
-                            JSONObject firstCandidate = candidates.getJSONObject(0);
-                            JSONObject content = firstCandidate.getJSONObject("content");
-                            JSONArray parts = content.getJSONArray("parts");
-                            String botReply = parts.getJSONObject(0).getString("text");
+                            String botReply = jsonObject.getJSONArray("candidates")
+                                    .getJSONObject(0)
+                                    .getJSONObject("content")
+                                    .getJSONArray("parts")
+                                    .getJSONObject(0)
+                                    .getString("text");
 
                             addMessage(botReply, true);
                         } catch (Exception e) {
                             addMessage("I'm having trouble understanding that right now. Could you rephrase?", true);
                         }
                     } else {
-                        Log.e("Chatbot", "API Error: " + responseBody);
-                        addMessage("I encountered a server hiccup. Please try again in a moment.", true);
+                        Log.e("Chatbot", "Google API Error " + response.code() + ": " + responseBody);
+                        addMessage("Server Error " + response.code() + ". Check Android Studio Logcat for details.", true);
                     }
                 }
             });
