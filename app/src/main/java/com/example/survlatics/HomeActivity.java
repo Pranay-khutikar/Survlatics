@@ -87,6 +87,10 @@ public class HomeActivity extends AppCompatActivity {
                 startActivity(new Intent(this, CompleteActivity.class));
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                 return true;
+            } else if (id == R.id.nav_report) { // Added Report Routing
+                startActivity(new Intent(this, UserReportActivity.class));
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                return true;
             } else if (id == R.id.nav_account) {
                 startActivity(new Intent(this, AccountActivity.class));
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);

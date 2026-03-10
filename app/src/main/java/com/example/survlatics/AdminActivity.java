@@ -65,6 +65,10 @@ public class AdminActivity extends AppCompatActivity {
                 navigateTo(AdminSurveyListActivity.class);
                 return true;
             }
+            if (id == R.id.nav_report) { // Added Report Routing
+                navigateTo(AdminReportListActivity.class);
+                return true;
+            }
             if (id == R.id.nav_account) {
                 navigateTo(Accountadmin.class);
                 return true;
