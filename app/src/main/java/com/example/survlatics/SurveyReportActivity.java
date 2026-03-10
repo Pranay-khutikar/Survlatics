@@ -23,6 +23,7 @@ import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
+import com.github.mikephil.charting.formatter.PercentFormatter;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -185,7 +186,6 @@ public class SurveyReportActivity extends AppCompatActivity {
                     }
                 } catch (Exception e) {
                     Log.e("SurveyReport", "Crash in fetchResponses", e);
-                    // Updated Toast so you can see exactly what causes the crash if it fails
                     Toast.makeText(SurveyReportActivity.this, "Crash: " + e.getMessage(), Toast.LENGTH_LONG).show();
                 }
             }
@@ -238,9 +238,11 @@ public class SurveyReportActivity extends AppCompatActivity {
 
         PieChart chart = new PieChart(this);
 
-        // Adjusted height to prevent massive charts pushing views off screen
-        int heightPx = (int) (250 * getResources().getDisplayMetrics().density);
+        int heightPx = (int) (280 * getResources().getDisplayMetrics().density); // Slightly taller for labels
         chart.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, heightPx));
+
+        // --- NEW: Enable percentage display ---
+        chart.setUsePercentValues(true);
 
         chart.setDrawHoleEnabled(true);
         chart.setHoleColor(Color.TRANSPARENT);
@@ -248,7 +250,7 @@ public class SurveyReportActivity extends AppCompatActivity {
         chart.setTransparentCircleRadius(55f);
         chart.setCenterText("Data Distribution");
         chart.setCenterTextColor(getResources().getColor(R.color.text_secondary));
-        chart.setEntryLabelColor(getResources().getColor(R.color.text_primary));
+        chart.setEntryLabelColor(Color.WHITE); // Make inner labels white for readability
 
         List<PieEntry> entries = new ArrayList<>();
         for (Map.Entry<String, Integer> e : freqMap.entrySet()) {
@@ -258,11 +260,21 @@ public class SurveyReportActivity extends AppCompatActivity {
         if (entries.isEmpty()) return;
 
         PieDataSet set = new PieDataSet(entries, "");
-        set.setColors(new int[]{Color.parseColor("#38BDF8"), Color.parseColor("#818CF8"), Color.parseColor("#F472B6"), Color.parseColor("#34D399")});
-        set.setValueTextColor(Color.WHITE);
-        set.setValueTextSize(14f);
+        set.setColors(new int[]{
+                Color.parseColor("#38BDF8"),
+                Color.parseColor("#818CF8"),
+                Color.parseColor("#F472B6"),
+                Color.parseColor("#34D399"),
+                Color.parseColor("#FBBF24")
+        });
 
-        chart.setData(new PieData(set));
+        // --- NEW: Apply Percentage Formatter to the data ---
+        PieData data = new PieData(set);
+        data.setValueFormatter(new PercentFormatter(chart));
+        data.setValueTextSize(14f);
+        data.setValueTextColor(Color.WHITE);
+
+        chart.setData(data);
         chart.getDescription().setEnabled(false);
         chart.getLegend().setEnabled(true);
         chart.getLegend().setTextColor(getResources().getColor(R.color.text_secondary));
@@ -339,8 +351,7 @@ public class SurveyReportActivity extends AppCompatActivity {
         String rawKey = BuildConfig.GEMINI_API_KEY;
         String apiKey = rawKey.replace("\"", "").replace("\n", "").trim();
 
-        // FIX: Replaced the broken markdown URL with a clean string
-        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + apiKey;
+        String url = "[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=)" + apiKey;
 
         Request request = new Request.Builder()
                 .url(url)
@@ -369,7 +380,6 @@ public class SurveyReportActivity extends AppCompatActivity {
                                 .getJSONObject(0)
                                 .getString("text");
 
-                        // Strip potential markdown wrappers just in case
                         aiResponseText = aiResponseText.replace("```json", "").replace("```", "").trim();
 
                         JSONObject resultJson = new JSONObject(aiResponseText);
@@ -406,13 +416,15 @@ public class SurveyReportActivity extends AppCompatActivity {
 
             PieChart chart = new PieChart(this);
 
-            // Adjusted height
-            int heightPx = (int) (250 * getResources().getDisplayMetrics().density);
+            int heightPx = (int) (280 * getResources().getDisplayMetrics().density);
             int topMarginPx = (int) (16 * getResources().getDisplayMetrics().density);
 
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, heightPx);
             params.topMargin = topMarginPx;
             chart.setLayoutParams(params);
+
+            // --- NEW: Enable percentage display for Sentiment Chart ---
+            chart.setUsePercentValues(true);
 
             chart.setDrawHoleEnabled(true);
             chart.setHoleColor(Color.TRANSPARENT);
@@ -447,10 +459,14 @@ public class SurveyReportActivity extends AppCompatActivity {
 
             PieDataSet set = new PieDataSet(entries, "");
             set.setColors(colorsArray);
-            set.setValueTextColor(Color.WHITE);
-            set.setValueTextSize(14f);
 
-            chart.setData(new PieData(set));
+            // --- NEW: Apply Percentage Formatter to the Sentiment data ---
+            PieData data = new PieData(set);
+            data.setValueFormatter(new PercentFormatter(chart));
+            data.setValueTextSize(14f);
+            data.setValueTextColor(Color.WHITE);
+
+            chart.setData(data);
             chart.getDescription().setEnabled(false);
             chart.getLegend().setEnabled(true);
             chart.getLegend().setTextColor(getResources().getColor(R.color.text_secondary));
