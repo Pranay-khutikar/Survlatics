@@ -50,7 +50,8 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginTop="24dp"
-        android:paddingHorizontal="16dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
         app:layout_constraintBottom_toTopOf="@+id/bottomNavigationView"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -75,7 +76,8 @@
         android:layout_height="0dp"
         android:layout_marginTop="16dp"
         android:clipToPadding="false"
-        android:paddingHorizontal="16dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
         android:paddingBottom="24dp"
         android:visibility="gone"
         app:layout_constraintBottom_toTopOf="@+id/bottomNavigationView"
@@ -86,8 +88,10 @@
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigationView"
-        android:layout_width="350dp"
+        android:layout_width="0dp"
         android:layout_height="80dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
         android:layout_marginBottom="16dp"
         android:background="@drawable/bg_bottom_nav_rounded"
         app:elevation="0dp"
@@ -100,7 +104,6 @@
         app:itemActiveIndicatorStyle="@style/CustomIndicator"
         app:labelVisibilityMode="unlabeled"
         app:itemIconSize="28dp"
-
         app:itemPaddingTop="8dp"
         app:itemPaddingBottom="8dp" />
 

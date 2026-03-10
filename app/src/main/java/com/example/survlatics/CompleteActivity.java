@@ -59,17 +59,27 @@ public class CompleteActivity extends AppCompatActivity {
 
             if (id == R.id.nav_home) {
                 startActivity(new Intent(this, HomeActivity.class));
-                // Added smooth fade transition
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                finish();
                 return true;
+
             } else if (id == R.id.nav_surveys) {
+
                 return true;
+
+            } else if (id == R.id.nav_report) {  // <-- ADDED REPORT NAVIGATION
+                startActivity(new Intent(this, UserReportActivity.class));
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                finish();
+                return true;
+
             } else if (id == R.id.nav_account) {
                 startActivity(new Intent(this, AccountActivity.class));
-                // Added smooth fade transition
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-                return true;
+                finish();
+                return true; // Stays on the current account screen
             }
+
             return false;
         });
     }

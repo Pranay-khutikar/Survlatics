@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -68,7 +70,6 @@ public class SurveyReportActivity extends AppCompatActivity {
         db = FirebaseDatabase.getInstance().getReference();
         client = new OkHttpClient();
 
-        // Safely grab the intent extra
         surveyId = getIntent().getStringExtra("SURVEY_ID");
         if (surveyId == null) surveyId = getIntent().getStringExtra("surveyId");
         if (surveyId == null) surveyId = getIntent().getStringExtra("id");
@@ -125,10 +126,7 @@ public class SurveyReportActivity extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot surveySnap) {
                 try {
-                    if (!surveySnap.exists()) {
-                        Toast.makeText(SurveyReportActivity.this, "Survey data not found.", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+                    if (!surveySnap.exists()) return;
 
                     String title = surveySnap.child("title").getValue(String.class);
                     tvReportTitle.setText(title != null ? title : "Analysis");
@@ -142,14 +140,11 @@ public class SurveyReportActivity extends AppCompatActivity {
                     }
                     fetchResponses(types, texts);
                 } catch (Exception e) {
-                    Log.e("SurveyReport", "Error in fetchSurveyData", e);
                     Toast.makeText(SurveyReportActivity.this, "Error loading survey structure.", Toast.LENGTH_SHORT).show();
                 }
             }
 
-            @Override public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(SurveyReportActivity.this, "Database error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
-            }
+            @Override public void onCancelled(@NonNull DatabaseError error) {}
         });
     }
 
@@ -171,9 +166,12 @@ public class SurveyReportActivity extends AppCompatActivity {
                     }
 
                     analysisContainer.removeAllViews();
+
+                    // --- API Staggering Logic ---
+                    int apiDelayMs = 0;
+
                     for (String qId : types.keySet()) {
                         LinearLayout cardLayout = createQuestionCard(texts.get(qId));
-
                         List<String> answers = answersMap.containsKey(qId) ? answersMap.get(qId) : new ArrayList<>();
 
                         if (answers.isEmpty()) {
@@ -181,11 +179,15 @@ public class SurveyReportActivity extends AppCompatActivity {
                         } else if ("mcq".equalsIgnoreCase(types.get(qId))) {
                             generateDonutChart(answers, cardLayout);
                         } else {
-                            generateTextAnalysis(answers, cardLayout);
+                            final int currentDelay = apiDelayMs;
+                            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                                generateTextAnalysis(answers, cardLayout);
+                            }, currentDelay);
+
+                            apiDelayMs += 3500;
                         }
                     }
                 } catch (Exception e) {
-                    Log.e("SurveyReport", "Crash in fetchResponses", e);
                     Toast.makeText(SurveyReportActivity.this, "Crash: " + e.getMessage(), Toast.LENGTH_LONG).show();
                 }
             }
@@ -237,20 +239,16 @@ public class SurveyReportActivity extends AppCompatActivity {
         }
 
         PieChart chart = new PieChart(this);
-
-        int heightPx = (int) (280 * getResources().getDisplayMetrics().density); // Slightly taller for labels
+        int heightPx = (int) (280 * getResources().getDisplayMetrics().density);
         chart.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, heightPx));
-
-        // --- NEW: Enable percentage display ---
         chart.setUsePercentValues(true);
-
         chart.setDrawHoleEnabled(true);
         chart.setHoleColor(Color.TRANSPARENT);
         chart.setHoleRadius(50f);
         chart.setTransparentCircleRadius(55f);
         chart.setCenterText("Data Distribution");
         chart.setCenterTextColor(getResources().getColor(R.color.text_secondary));
-        chart.setEntryLabelColor(Color.WHITE); // Make inner labels white for readability
+        chart.setEntryLabelColor(Color.WHITE);
 
         List<PieEntry> entries = new ArrayList<>();
         for (Map.Entry<String, Integer> e : freqMap.entrySet()) {
@@ -268,7 +266,6 @@ public class SurveyReportActivity extends AppCompatActivity {
                 Color.parseColor("#FBBF24")
         });
 
-        // --- NEW: Apply Percentage Formatter to the data ---
         PieData data = new PieData(set);
         data.setValueFormatter(new PercentFormatter(chart));
         data.setValueTextSize(14f);
@@ -334,13 +331,10 @@ public class SurveyReportActivity extends AppCompatActivity {
             JSONObject part = new JSONObject();
             part.put("text", prompt);
             parts.put(part);
-
             JSONObject content = new JSONObject();
             content.put("parts", parts);
-
             JSONArray contents = new JSONArray();
             contents.put(content);
-
             jsonBody.put("contents", contents);
         } catch (Exception e) {
             e.printStackTrace();
@@ -351,10 +345,12 @@ public class SurveyReportActivity extends AppCompatActivity {
         String rawKey = BuildConfig.GEMINI_API_KEY;
         String apiKey = rawKey.replace("\"", "").replace("\n", "").trim();
 
-        String url = "[https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=)" + apiKey;
+        // THIS IS THE FIX! Plain string. No brackets.
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + apiKey;
 
         Request request = new Request.Builder()
                 .url(url)
+                .addHeader("Content-Type", "application/json")
                 .post(body)
                 .build();
 
@@ -370,41 +366,43 @@ public class SurveyReportActivity extends AppCompatActivity {
                 if (isFinishing() || isDestroyed()) return;
                 String responseBody = response.body() != null ? response.body().string() : "";
 
-                if (response.isSuccessful()) {
-                    try {
-                        JSONObject jsonObject = new JSONObject(responseBody);
-                        String aiResponseText = jsonObject.getJSONArray("candidates")
-                                .getJSONObject(0)
-                                .getJSONObject("content")
-                                .getJSONArray("parts")
-                                .getJSONObject(0)
-                                .getString("text");
-
-                        aiResponseText = aiResponseText.replace("```json", "").replace("```", "").trim();
-
-                        JSONObject resultJson = new JSONObject(aiResponseText);
-                        String summary = resultJson.has("summary") ? resultJson.getString("summary") : "Analysis generated.";
-                        int pos = resultJson.has("positive") ? resultJson.getInt("positive") : 0;
-                        int neg = resultJson.has("negative") ? resultJson.getInt("negative") : 0;
-                        int neu = resultJson.has("neutral") ? resultJson.getInt("neutral") : 0;
-
-                        runOnUiThread(() -> {
-                            if (isFinishing() || isDestroyed()) return;
-                            tvAi.setText("AI Insight:\n" + summary);
-                            generateSentimentChart(pos, neg, neu, layout);
-                        });
-
-                    } catch (Exception e) {
-                        Log.e("SurveyReport", "Parsing Error", e);
-                        runOnUiThread(() -> {
-                            if (!isFinishing() && !isDestroyed()) tvAi.setText("Error parsing AI JSON insights.");
-                        });
-                    }
-                } else {
-                    Log.e("SurveyReport", "Google API Error " + response.code() + ": " + responseBody);
+                if (!response.isSuccessful()) {
                     runOnUiThread(() -> {
-                        if (!isFinishing() && !isDestroyed()) tvAi.setText("Error " + response.code() + " fetching insights.");
+                        if (response.code() == 503 || response.code() == 429) {
+                            tvAi.setText("AI is busy processing. Please reopen the report to try again.");
+                        } else {
+                            tvAi.setText("API Error " + response.code());
+                        }
                     });
+                    return;
+                }
+
+                try {
+                    JSONObject jsonObject = new JSONObject(responseBody);
+                    String aiResponseText = jsonObject.getJSONArray("candidates")
+                            .getJSONObject(0)
+                            .getJSONObject("content")
+                            .getJSONArray("parts")
+                            .getJSONObject(0)
+                            .getString("text");
+
+                    // Clean out markdown properly
+                    aiResponseText = aiResponseText.replaceAll("```json|```", "").trim();
+
+                    JSONObject resultJson = new JSONObject(aiResponseText);
+                    String summary = resultJson.has("summary") ? resultJson.getString("summary") : "Analysis generated.";
+                    int pos = resultJson.has("positive") ? resultJson.getInt("positive") : 0;
+                    int neg = resultJson.has("negative") ? resultJson.getInt("negative") : 0;
+                    int neu = resultJson.has("neutral") ? resultJson.getInt("neutral") : 0;
+
+                    runOnUiThread(() -> {
+                        if (isFinishing() || isDestroyed()) return;
+                        tvAi.setText("AI Insight:\n" + summary);
+                        generateSentimentChart(pos, neg, neu, layout);
+                    });
+
+                } catch (Exception e) {
+                    runOnUiThread(() -> tvAi.setText("Error parsing AI response format."));
                 }
             }
         });
@@ -422,10 +420,7 @@ public class SurveyReportActivity extends AppCompatActivity {
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, heightPx);
             params.topMargin = topMarginPx;
             chart.setLayoutParams(params);
-
-            // --- NEW: Enable percentage display for Sentiment Chart ---
             chart.setUsePercentValues(true);
-
             chart.setDrawHoleEnabled(true);
             chart.setHoleColor(Color.TRANSPARENT);
             chart.setHoleRadius(50f);
@@ -453,14 +448,11 @@ public class SurveyReportActivity extends AppCompatActivity {
             if (entries.isEmpty()) return;
 
             int[] colorsArray = new int[colorsList.size()];
-            for (int i = 0; i < colorsList.size(); i++) {
-                colorsArray[i] = colorsList.get(i);
-            }
+            for (int i = 0; i < colorsList.size(); i++) colorsArray[i] = colorsList.get(i);
 
             PieDataSet set = new PieDataSet(entries, "");
             set.setColors(colorsArray);
 
-            // --- NEW: Apply Percentage Formatter to the Sentiment data ---
             PieData data = new PieData(set);
             data.setValueFormatter(new PercentFormatter(chart));
             data.setValueTextSize(14f);

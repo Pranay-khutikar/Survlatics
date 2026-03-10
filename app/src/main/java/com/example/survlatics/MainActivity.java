@@ -4,6 +4,7 @@ import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -44,10 +45,11 @@ public class MainActivity extends AppCompatActivity {
     private String generatedOtp = "";
     private String currentUid = "";
 
-    // --- EMAILJS CONFIGURATION (Replace with your actual keys from emailjs.com) ---
-    private static final String EMAILJS_SERVICE_ID = "YOUR_SERVICE_ID";
-    private static final String EMAILJS_TEMPLATE_ID = "YOUR_TEMPLATE_ID";
-    private static final String EMAILJS_PUBLIC_KEY = "YOUR_PUBLIC_KEY";
+    // --- EMAILJS CONFIGURATION ---
+    // Double-check these in your EmailJS Dashboard!
+    private static final String EMAILJS_SERVICE_ID = "service_survlatics";
+    private static final String EMAILJS_TEMPLATE_ID = "template_survlatics";
+    private static final String EMAILJS_PUBLIC_KEY = "jb4TbHmcQrX6ClNDM";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,7 +68,6 @@ public class MainActivity extends AppCompatActivity {
         btnVerifyOtp = findViewById(R.id.btnVerifyOtp);
         tvOtpMessage = findViewById(R.id.tvOtpMessage);
 
-        // 🔁 Handle existing user sessions
         FirebaseUser currentUser = firebaseAuth.getCurrentUser();
         if (currentUser != null) {
             currentUid = currentUser.getUid();
@@ -84,7 +85,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    // --- Soft Scale Animation for Interactions ---
     private void animateClick(View view) {
         PropertyValuesHolder scaleX = PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 0.95f, 1f);
         PropertyValuesHolder scaleY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 0.95f, 1f);
@@ -97,15 +97,8 @@ public class MainActivity extends AppCompatActivity {
         String email = etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
         String password = etPassword.getText() != null ? etPassword.getText().toString().trim() : "";
 
-        if (email.isEmpty()) {
-            etEmail.setError("Email required");
-            etEmail.requestFocus();
-            return;
-        }
-
-        if (password.isEmpty()) {
-            etPassword.setError("Password required");
-            etPassword.requestFocus();
+        if (email.isEmpty() || password.isEmpty()) {
+            Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -117,45 +110,32 @@ public class MainActivity extends AppCompatActivity {
                     btnLogin.setEnabled(true);
                     btnLogin.setText("Sign In");
 
-                    if (!task.isSuccessful()) {
-                        Toast.makeText(this, "Invalid email or password", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    FirebaseUser user = firebaseAuth.getCurrentUser();
-                    if (user != null) {
-                        currentUid = user.getUid();
-                        initiateOtpFlow(email);
+                    if (task.isSuccessful()) {
+                        FirebaseUser user = firebaseAuth.getCurrentUser();
+                        if (user != null) {
+                            currentUid = user.getUid();
+                            initiateOtpFlow(email);
+                        }
+                    } else {
+                        Toast.makeText(this, "Login Failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
     }
 
     private void initiateOtpFlow(String email) {
-        // 1. Generate 6 digit OTP
-        generatedOtp = String.format("%06d", new Random().nextInt(999999));
+        generatedOtp = String.format("%06d", new Random().nextInt(1000000));
 
-        // 2. Transition UI
         loginContainer.setVisibility(View.GONE);
         otpContainer.setVisibility(View.VISIBLE);
         tvOtpMessage.setText("We sent a 6-digit code to\n" + email);
 
-        // 3. Send Email via API
         sendEmailOTP(email, generatedOtp);
-
-        // Uncomment this for fast local testing without checking email:
-        // Toast.makeText(this, "DEBUG OTP: " + generatedOtp, Toast.LENGTH_LONG).show();
     }
 
     private void verifyOtp() {
         String enteredOtp = etOtp.getText() != null ? etOtp.getText().toString().trim() : "";
 
-        if (enteredOtp.isEmpty() || enteredOtp.length() < 6) {
-            etOtp.setError("Enter 6-digit OTP");
-            return;
-        }
-
         if (enteredOtp.equals(generatedOtp)) {
-            // Success! Load user role
             btnVerifyOtp.setText("Loading...");
             btnVerifyOtp.setEnabled(false);
             redirectByRole(currentUid);
@@ -172,11 +152,11 @@ public class MainActivity extends AppCompatActivity {
             JSONObject json = new JSONObject();
             json.put("service_id", EMAILJS_SERVICE_ID);
             json.put("template_id", EMAILJS_TEMPLATE_ID);
-            json.put("user_id", EMAILJS_PUBLIC_KEY);
+            json.put("user_id", EMAILJS_PUBLIC_KEY); // Must be "user_id" for the API
 
             JSONObject templateParams = new JSONObject();
-            templateParams.put("to_email", recipientEmail);
-            templateParams.put("otp_code", otpCode);
+            templateParams.put("to_email", recipientEmail); // Ensure dashboard is {{to_email}}
+            templateParams.put("otp_code", otpCode);        // Ensure dashboard is {{otp_code}}
             json.put("template_params", templateParams);
 
             RequestBody body = RequestBody.create(
@@ -192,13 +172,17 @@ public class MainActivity extends AppCompatActivity {
             client.newCall(request).enqueue(new Callback() {
                 @Override
                 public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                    runOnUiThread(() -> Toast.makeText(MainActivity.this, "Network error sending OTP", Toast.LENGTH_SHORT).show());
+                    runOnUiThread(() -> Toast.makeText(MainActivity.this, "Network Error", Toast.LENGTH_SHORT).show());
                 }
 
                 @Override
-                public void onResponse(@NonNull Call call, @NonNull Response response) {
-                    if(!response.isSuccessful()){
-                        runOnUiThread(() -> Toast.makeText(MainActivity.this, "Email API Error. Check API Keys.", Toast.LENGTH_LONG).show());
+                public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                    if (!response.isSuccessful()) {
+                        final String errorMsg = response.body() != null ? response.body().string() : "Unknown Error";
+                        Log.e("EmailJS", "Failed: " + errorMsg);
+                        runOnUiThread(() -> Toast.makeText(MainActivity.this, "API Error: " + errorMsg, Toast.LENGTH_LONG).show());
+                    } else {
+                        runOnUiThread(() -> Toast.makeText(MainActivity.this, "OTP Sent Successfully!", Toast.LENGTH_SHORT).show());
                     }
                 }
             });
@@ -210,51 +194,23 @@ public class MainActivity extends AppCompatActivity {
     private void redirectByRole(@NonNull String uid) {
         firestore.collection("Users").document(uid).get()
                 .addOnSuccessListener(document -> {
-                    if (!document.exists()) {
-                        Toast.makeText(this, "User record not found", Toast.LENGTH_LONG).show();
-                        firebaseAuth.signOut();
-                        resetUI();
-                        return;
+                    if (document.exists()) {
+                        String role = document.getString("role");
+                        Intent intent;
+                        if ("admin".equalsIgnoreCase(role)) {
+                            intent = new Intent(this, AdminActivity.class);
+                        } else {
+                            intent = new Intent(this, HomeActivity.class);
+                        }
+                        startActivity(intent);
+                        finish();
                     }
-
-                    String role = document.getString("role");
-                    if (role == null) {
-                        Toast.makeText(this, "User role missing", Toast.LENGTH_SHORT).show();
-                        firebaseAuth.signOut();
-                        resetUI();
-                        return;
-                    }
-
-                    Intent intent;
-                    if (role.trim().equalsIgnoreCase("admin")) {
-                        intent = new Intent(this, AdminActivity.class);
-                    } else if (role.trim().equalsIgnoreCase("user")) {
-                        intent = new Intent(this, HomeActivity.class);
-                    } else {
-                        Toast.makeText(this, "Invalid role configuration", Toast.LENGTH_SHORT).show();
-                        firebaseAuth.signOut();
-                        resetUI();
-                        return;
-                    }
-
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    startActivity(intent);
-                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-                    finish();
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Failed to load user data", Toast.LENGTH_SHORT).show();
-                    firebaseAuth.signOut();
-                    resetUI();
                 });
     }
 
     private void resetUI() {
         loginContainer.setVisibility(View.VISIBLE);
         otpContainer.setVisibility(View.GONE);
-        btnVerifyOtp.setEnabled(true);
-        btnVerifyOtp.setText("Verify & Proceed");
         etOtp.setText("");
-        etPassword.setText("");
     }
 }

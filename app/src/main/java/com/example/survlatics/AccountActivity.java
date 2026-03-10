@@ -105,18 +105,29 @@ public class AccountActivity extends AppCompatActivity {
         bottomNavigationView.setSelectedItemId(R.id.nav_account);
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
+
             if (id == R.id.nav_home) {
                 startActivity(new Intent(this, HomeActivity.class));
-                // Replace default snapping transition with smooth fade
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                finish();
                 return true;
+
             } else if (id == R.id.nav_surveys) {
                 startActivity(new Intent(this, CompleteActivity.class));
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                finish();
                 return true;
+
+            } else if (id == R.id.nav_report) {  // <-- ADDED REPORT NAVIGATION
+                startActivity(new Intent(this, UserReportActivity.class));
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                finish();
+                return true;
+
             } else if (id == R.id.nav_account) {
-                return true;
+                return true; // Stays on the current account screen
             }
+
             return false;
         });
     }
