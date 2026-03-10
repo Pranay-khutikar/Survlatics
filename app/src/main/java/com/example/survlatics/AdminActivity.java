@@ -60,22 +60,32 @@ public class AdminActivity extends AppCompatActivity {
         // --- 4. Navigation Logic ---
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
-            if (id == R.id.nav_home) return true;
-            if (id == R.id.nav_surveys) {
-                navigateTo(AdminSurveyListActivity.class);
+
+            if (id == R.id.nav_home) {
+
                 return true;
-            }
-            if (id == R.id.nav_report) { // Added Report Routing
-                navigateTo(AdminReportListActivity.class);
+
+            } else if (id == R.id.nav_surveys) {
+                startActivity(new Intent(this, AdminSurveyListActivity.class));
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                finish();
                 return true;
-            }
-            if (id == R.id.nav_account) {
-                navigateTo(Accountadmin.class);
+
+            } else if (id == R.id.nav_report) {  // <-- ADDED REPORT NAVIGATION
+                startActivity(new Intent(this, AdminReportListActivity.class));
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                finish();
                 return true;
+
+            } else if (id == R.id.nav_account) {
+                startActivity(new Intent(this, AdminReportListActivity.class));
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                finish();
+                return true; // Stays on the current account screen
             }
+
             return false;
         });
-
         // --- 5. Add Survey Action ---
         btnAddSurvey.setOnClickListener(v -> {
             animateClick(v);

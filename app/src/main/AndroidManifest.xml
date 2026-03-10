@@ -87,6 +87,14 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize">
         </activity>
+        <activity
+            android:name=".UserReportActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".AdminReportListActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
 
         <meta-data
             android:name="preloaded_fonts"

@@ -87,14 +87,23 @@ public class Accountadmin extends AppCompatActivity {
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                 finish();
                 return true;
+
             } else if (id == R.id.nav_surveys) {
                 startActivity(new Intent(this, AdminSurveyListActivity.class));
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                 finish();
                 return true;
-            } else if (id == R.id.nav_account) {
+
+            } else if (id == R.id.nav_report) {  // <-- ADDED REPORT NAVIGATION
+                startActivity(new Intent(this, AdminReportListActivity.class));
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                finish();
                 return true;
+
+            } else if (id == R.id.nav_account) {
+                return true; // Stays on the current account screen
             }
+
             return false;
         });
 
