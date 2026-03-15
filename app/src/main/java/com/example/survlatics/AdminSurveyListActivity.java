@@ -83,7 +83,7 @@ public class AdminSurveyListActivity extends AppCompatActivity {
                 return true;
 
             } else if (id == R.id.nav_account) {
-                startActivity(new Intent(this, AdminReportListActivity.class));
+                startActivity(new Intent(this, Accountadmin.class));
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                 finish();
                 return true; // Stays on the current account screen
