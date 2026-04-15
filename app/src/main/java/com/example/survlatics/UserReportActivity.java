@@ -48,7 +48,7 @@ public class UserReportActivity extends AppCompatActivity {
     private Uri imageUri = null;
 
     // YOUR IMGBB API KEY
-    private final String IMGBB_API_KEY = "677cceb531be8ab9a0842f217adefdcb";
+    private final String IMGBB_API_KEY = "50b4119135b90f9953e85404da81db13";
 
     private final ActivityResultLauncher<String> imagePickerLauncher = registerForActivityResult(
             new ActivityResultContracts.GetContent(),
@@ -102,7 +102,7 @@ public class UserReportActivity extends AppCompatActivity {
             saveReportToDatabase(message, null);
         }
     }
-
+`
     private void uploadImageToImgBB(String reportMessage) {
         try {
             InputStream imageStream = getContentResolver().openInputStream(imageUri);
